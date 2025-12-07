@@ -969,8 +969,9 @@
                 const baseSpread = Math.PI * 0.65; // ~117 degrees for 2 children (increased from 0.55)
                 const spreadAngle = Math.min(Math.PI * 1.0, baseSpread + (total - 2) * 0.2); // Increase spread for more children, max 180 degrees
                 const halfSpread = spreadAngle / 2;
-                // Use parentAngle (the direction the parent came from) for consistent child branching
-                let childAngle = total === 1 ? parentAngle : parentAngle - halfSpread + (spreadAngle / (total - 1)) * index;
+                // ALWAYS use angle from origin to parent - ensures children spread OUTWARD from center
+                const outwardAngle = Math.atan2(parentPos[2], parentPos[0]);
+                let childAngle = total === 1 ? outwardAngle : outwardAngle - halfSpread + (spreadAngle / (total - 1)) * index;
                 const verticalOffset = (index - (total - 1) / 2) * (0.8 + level * 0.15) * 0.2;
                 // Increase radius when there are more siblings - more aggressive scaling
                 const adjustedBaseRadius = baseRadius + Math.max(0, (total - 2) * 0.5);
@@ -1161,23 +1162,8 @@
                             const angleSpread = Math.min(Math.PI * 1.0, baseSpread + (total - 2) * 0.2);
                             const halfSpread = angleSpread / 2; 
                             
-                            // Use parent's branchAngle for outward direction (the direction parent points from its parent)
-                            // Fall back to angle from origin if no branchAngle set
-                            let outwardAngle;
-                            if (parentData.branchAngle !== undefined) {
-                                outwardAngle = parentData.branchAngle;
-                            } else if (parentData.level === 1) {
-                                // Level 1 nodes: use angle from origin
-                                outwardAngle = Math.atan2(parentPos.z, parentPos.x);
-                            } else {
-                                // Deeper nodes without branchAngle: calculate from grandparent
-                                const grandparentMesh = parentData.parent ? nodes.get(parentData.parent.id) : null;
-                                if (grandparentMesh) {
-                                    outwardAngle = Math.atan2(parentPos.z - grandparentMesh.position.z, parentPos.x - grandparentMesh.position.x);
-                                } else {
-                                    outwardAngle = Math.atan2(parentPos.z, parentPos.x);
-                                }
-                            }
+                            // ALWAYS use angle from origin to parent - this ensures children spread OUTWARD from center
+                            const outwardAngle = Math.atan2(parentPos.z, parentPos.x);
                             
                             // Calculate child angle spreading from outward angle
                             let childAngle;
@@ -2351,14 +2337,15 @@
                     const x = (labelScreenPos.x * 0.5 + 0.5) * window.innerWidth;
                     const y = (labelScreenPos.y * -0.5 + 0.5) * window.innerHeight;
                     
-                    const distToLabel = camera.position.distanceTo(labelWorldPos);
+                    const distToNode = camera.position.distanceTo(mesh.position);
                     
-                    // Check if LABEL position is behind another node (not the node center)
-                    const dirToLabel = labelWorldPos.clone().sub(camera.position).normalize();
-                    labelRaycaster.set(camera.position, dirToLabel);
-                    const intersects = labelRaycaster.intersectObjects(visibleNodeMeshes);
-                    // Label is occluded if any node (including its own parent) blocks the view to the label position
-                    const isOccluded = intersects.length > 0 && intersects[0].distance < distToLabel - 0.5;
+                    // Check if node CENTER is behind another node (simpler check)
+                    const dirToNode = mesh.position.clone().sub(camera.position).normalize();
+                    labelRaycaster.set(camera.position, dirToNode);
+                    const otherNodes = visibleNodeMeshes.filter(n => n !== mesh);
+                    const intersects = labelRaycaster.intersectObjects(otherNodes);
+                    // Label is occluded only if another node fully blocks view to this node's center
+                    const isOccluded = intersects.length > 0 && intersects[0].distance < distToNode - nodeRadius;
                     
                     if (isOccluded || labelScreenPos.z > 1) { 
                         mesh.userData.labelDiv.style.display = 'none'; 
