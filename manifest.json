@@ -1,8 +1,8 @@
 {
-  "name": "Mynd",
-  "short_name": "Mynd",
+  "name": "mynd-flat",
+  "short_name": "mynd-flat",
   "description": "3D interactive mind map",
-  "start_url": "/mynd/",
+  "start_url": "/mynd-flat/",
   "display": "standalone",
   "background_color": "#0a0a12",
   "theme_color": "#6366f1",
