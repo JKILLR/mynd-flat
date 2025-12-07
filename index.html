@@ -1793,13 +1793,7 @@
             const touch = e.changedTouches[0];
             // Ignore touches on UI elements - include radial items explicitly
             const target = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (target && target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #undo-btn, #depth-indicator, .modal-overlay, #radial-menu, .radial-item, .radial-toggle, #header, .node-label, button, input, textarea, a')) return;
-            
-            // If radial menu is open, close it and don't do anything else
-            if (radialMenuOpen) {
-                hideRadialMenu();
-                return;
-            }
+            if (target && target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #undo-btn, #depth-indicator, .modal-overlay, .radial-item, .radial-toggle, #header, .node-label, button, input, textarea, a')) return;
             
             // In move mode, don't select nodes
             if (isMoveMode) return;
@@ -1809,6 +1803,16 @@
             raycaster.setFromCamera(mouse, camera); 
             const visibleNodes = Array.from(nodes.values()).filter(n => n.visible); 
             const intersects = raycaster.intersectObjects(visibleNodes); 
+            
+            // If radial menu is open
+            if (radialMenuOpen) {
+                hideRadialMenu();
+                // If tapped on a node, select it
+                if (intersects.length > 0) {
+                    selectNode(intersects[0].object);
+                }
+                return;
+            }
             
             const now = Date.now();
             const isDoubleTap = (now - lastTapTime) < 300;
