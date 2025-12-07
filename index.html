@@ -75,7 +75,7 @@
                         radial-gradient(ellipse at 80% 80%, rgba(78,205,196,0.08) 0%, transparent 50%),
                         radial-gradient(ellipse at 50% 50%, rgba(155,93,229,0.06) 0%, transparent 60%),
                         linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%); }
-        #canvas-container { position: fixed; inset: 0; z-index: calc(var(--z-canvas) + 1); }
+        #canvas-container { position: fixed; inset: 0; z-index: calc(var(--z-canvas) + 1); touch-action: none; }
         #header { position: fixed; top: var(--space-6); left: var(--space-6); z-index: var(--z-ui); }
         .brand { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) var(--space-4);
             background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--glass-border);
@@ -284,14 +284,120 @@
         .help-key { font-family: var(--font-mono); font-size: 10px; padding: 3px 6px; background: var(--bg-tertiary);
             border: 1px solid var(--glass-border); border-radius: 4px; min-width: 28px; text-align: center; color: var(--text-muted); }
         @media (max-width: 768px) {
-            #search-container { right: var(--space-3); top: auto; bottom: 100px; }
-            .search-wrapper.expanded { width: calc(100vw - 100px); }
-            #theme-toggle { right: 60px; top: auto; bottom: 100px; }
-            #undo-btn { right: 110px; top: auto; bottom: 100px; }
-            #controls-panel { flex-direction: row; flex-wrap: wrap; top: auto; bottom: var(--space-6); right: var(--space-3); left: var(--space-3); justify-content: center; }
+            /* Header - make it smaller */
+            #header { padding: var(--space-3); }
+            .brand { padding: var(--space-2) var(--space-3); }
+            .brand-logo { width: 32px; height: 32px; font-size: 16px; }
+            .brand-text h1 { font-size: 18px; }
+            .brand-text p { font-size: 9px; }
+            
+            /* Top right buttons - horizontal row at top */
+            #undo-btn { top: var(--space-3); right: 100px; bottom: auto; width: 36px; height: 36px; }
+            #theme-toggle { top: var(--space-3); right: 54px; bottom: auto; width: 36px; height: 36px; }
+            #search-container { top: var(--space-3); right: var(--space-3); bottom: auto; }
+            .search-wrapper { height: 36px; }
+            .search-wrapper.expanded { width: calc(100vw - 24px); }
+            
+            /* Breadcrumb */
+            #depth-indicator { top: 70px; left: var(--space-3); right: auto; max-width: calc(100vw - 24px); }
+            
+            /* Controls panel - bottom toolbar */
+            #controls-panel { 
+                flex-direction: row; 
+                top: auto; 
+                bottom: 0; 
+                left: 0; 
+                right: 0; 
+                padding: var(--space-3) var(--space-2);
+                padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+                border-radius: 0;
+                justify-content: space-around;
+                gap: var(--space-1);
+                background: var(--glass-bg);
+                backdrop-filter: blur(20px);
+            }
+            .control-btn { 
+                width: 44px; 
+                height: 44px; 
+                padding: 0; 
+                justify-content: center;
+                border-radius: 10px;
+            }
             .control-btn span.text { display: none; }
-            #info-panel { bottom: 100px; }
-            #quick-capture { bottom: 100px; }
+            .control-btn svg, .control-btn span:not(.text) { font-size: 18px; }
+            
+            /* Info panel - above controls */
+            #info-panel { 
+                bottom: 80px; 
+                left: var(--space-3); 
+                right: var(--space-3); 
+                width: auto;
+                transform: none;
+                max-width: none;
+                padding: var(--space-3);
+            }
+            #info-panel .panel-header { gap: var(--space-2); }
+            #info-panel #node-title { font-size: 16px; }
+            .panel-actions { gap: var(--space-2); flex-wrap: wrap; }
+            .action-btn { padding: var(--space-2) var(--space-3); font-size: 12px; }
+            #close-btn { top: var(--space-2); right: var(--space-2); width: 28px; height: 28px; }
+            
+            /* Help panel - fullscreen modal on mobile */
+            #help-panel { 
+                bottom: 80px;
+                left: var(--space-3);
+                right: var(--space-3);
+                top: auto;
+                max-height: 50vh;
+                overflow-y: auto;
+            }
+            #help-panel .help-close-btn {
+                display: flex;
+            }
+            
+            /* Quick capture - above controls */
+            #quick-capture { 
+                bottom: 80px; 
+                left: var(--space-3); 
+                right: var(--space-3); 
+            }
+            
+            /* Radial menu - larger touch targets */
+            .radial-item { width: 40px; height: 40px; }
+            .radial-toggle { width: 40px; height: 40px; }
+            
+            /* Node labels - larger on mobile */
+            .node-label { font-size: 12px; padding: 4px 10px; }
+            
+            /* Modal - full width on mobile */
+            .modal-content { width: calc(100vw - 32px); max-height: 80vh; overflow-y: auto; }
+        }
+        
+        /* Help panel close button - hidden on desktop */
+        #help-panel .help-close-btn {
+            display: none;
+            position: absolute;
+            top: var(--space-2);
+            right: var(--space-2);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--glass-bg-light);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        #help-panel .help-close-btn:hover { color: var(--text-primary); }
+        
+        /* Mobile help content */
+        .help-mobile { display: none; }
+        .help-desktop { display: block; }
+        @media (max-width: 768px) {
+            .help-mobile { display: block; }
+            .help-desktop { display: none; }
         }
     </style>
 </head>
@@ -319,15 +425,27 @@
     <input type="file" id="import-input" accept=".json">
     <nav id="breadcrumb"><span id="breadcrumb-path"></span></nav>
     <aside id="help-panel">
-        <div class="help-title">Shortcuts</div>
-        <div class="help-item"><span class="help-key">Click</span> Select node</div>
-        <div class="help-item"><span class="help-key">2×Click</span> Dive into node</div>
-        <div class="help-item"><span class="help-key">Enter</span> Dive into selected</div>
-        <div class="help-item"><span class="help-key">Esc</span> Surface / Deselect</div>
-        <div class="help-item"><span class="help-key">⌘K</span> Search</div>
-        <div class="help-item"><span class="help-key">⌘Z</span> Undo</div>
-        <div class="help-item"><span class="help-key">Q</span> Quick capture</div>
-        <div class="help-item"><span class="help-key">↑↓←→</span> Navigate</div>
+        <button class="help-close-btn" id="help-close-btn">×</button>
+        <div class="help-title">Controls</div>
+        <div class="help-desktop">
+            <div class="help-item"><span class="help-key">Click</span> Select node</div>
+            <div class="help-item"><span class="help-key">2×Click</span> Dive into node</div>
+            <div class="help-item"><span class="help-key">Enter</span> Dive into selected</div>
+            <div class="help-item"><span class="help-key">Esc</span> Surface / Deselect</div>
+            <div class="help-item"><span class="help-key">⌘K</span> Search</div>
+            <div class="help-item"><span class="help-key">⌘Z</span> Undo</div>
+            <div class="help-item"><span class="help-key">Q</span> Quick capture</div>
+            <div class="help-item"><span class="help-key">↑↓←→</span> Navigate</div>
+        </div>
+        <div class="help-mobile">
+            <div class="help-item"><span class="help-key">Tap</span> Select node</div>
+            <div class="help-item"><span class="help-key">Double tap</span> Dive into node</div>
+            <div class="help-item"><span class="help-key">Drag</span> Rotate view</div>
+            <div class="help-item"><span class="help-key">Pinch</span> Zoom in/out</div>
+            <div class="help-item"><span class="help-key">2-finger drag</span> Pan view</div>
+            <div class="help-item"><span class="help-key">⋯ menu</span> Node actions</div>
+            <div class="help-item"><span class="help-key">↑ button</span> Surface up</div>
+        </div>
     </aside>
     <div id="quick-capture"><div class="quick-capture-wrapper"><input type="text" id="quick-capture-input" placeholder="Quick thought... (Enter to add)"><button class="quick-capture-btn" id="quick-capture-submit">Add</button></div><div class="quick-capture-hint">Press Esc to close • Adding to selected node or root</div></div>
     <div id="radial-menu">
@@ -503,6 +621,7 @@
             document.getElementById('add-root-btn').addEventListener('click', () => { const ctx = window.getCurrentContext ? window.getCurrentContext() : store.data.id; this.openModal('add', ctx); });
             document.getElementById('export-btn').addEventListener('click', () => this.exportMap());
             document.getElementById('help-btn').addEventListener('click', () => this.toggleHelp());
+            document.getElementById('help-close-btn').addEventListener('click', () => this.toggleHelp());
             document.getElementById('theme-toggle').addEventListener('click', () => themeManager.toggle());
             document.getElementById('undo-btn').addEventListener('click', () => this.performUndo());
             document.getElementById('import-btn').addEventListener('click', () => this.els.importInput.click());
@@ -578,6 +697,7 @@
         controls.enableDamping = true; controls.dampingFactor = 0.05; controls.minDistance = 8; controls.maxDistance = 60;
         controls.enablePan = true; controls.panSpeed = 0.8; controls.maxPolarAngle = Math.PI * 0.85;
         controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+        controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
 
         let shiftHeld = false;
         window.addEventListener('keydown', (e) => { if (e.key === 'Shift' && !shiftHeld) { shiftHeld = true; controls.mouseButtons.LEFT = THREE.MOUSE.PAN; } if (e.key === 'Escape') { if (isNodeDragMode) cancelNodeDrag(); if (isMoveMode) toggleMoveMode(); if (radialMenuOpen) hideRadialMenu(); } });
@@ -1318,10 +1438,91 @@
         }
         function onDoubleClick(e) { if (isNodeDragMode) return; if (e.target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #depth-indicator, .modal-overlay, #radial-menu')) return; mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1; raycaster.setFromCamera(mouse, camera); const visibleNodes = Array.from(nodes.values()).filter(n => n.visible); const intersects = raycaster.intersectObjects(visibleNodes); if (intersects.length > 0) { const mesh = intersects[0].object; if (mesh.userData.children && mesh.userData.children.length > 0) diveIntoNode(mesh); } }
 
-        let touchStart = { x: 0, y: 0 }; let isTouchDrag = false;
-        function onTouchStart(e) { if (e.touches.length === 1) { touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY }; isTouchDrag = false; } }
-        function onTouchMove(e) { if (e.touches.length === 1) { const delta = Math.abs(e.touches[0].clientX - touchStart.x) + Math.abs(e.touches[0].clientY - touchStart.y); if (delta > 10) isTouchDrag = true; } }
-        function onTouchEnd(e) { if (isTouchDrag || e.changedTouches.length !== 1) return; const touch = e.changedTouches[0]; mouse.x = (touch.clientX / window.innerWidth) * 2 - 1; mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1; raycaster.setFromCamera(mouse, camera); const visibleNodes = Array.from(nodes.values()).filter(n => n.visible); const intersects = raycaster.intersectObjects(visibleNodes); if (intersects.length > 0) selectNode(intersects[0].object); else deselectNode(); }
+        let touchStart = { x: 0, y: 0, time: 0 }; let isTouchDrag = false; let lastTapTime = 0; let wasMultiTouch = false; let touchDragTarget = null;
+        function onTouchStart(e) { 
+            if (e.touches.length > 1) {
+                wasMultiTouch = true;
+                return;
+            }
+            if (e.touches.length === 1) { 
+                touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() }; 
+                isTouchDrag = false;
+                wasMultiTouch = false;
+                
+                // In move mode, check if we're touching a node to drag
+                if (isMoveMode && !isNodeDragMode) {
+                    const touch = e.touches[0];
+                    mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                    raycaster.setFromCamera(mouse, camera);
+                    const visibleNodes = Array.from(nodes.values()).filter(n => n.visible);
+                    const intersects = raycaster.intersectObjects(visibleNodes);
+                    if (intersects.length > 0) {
+                        touchDragTarget = intersects[0].object;
+                        startNodeDrag(touchDragTarget);
+                    }
+                }
+            } 
+        }
+        function onTouchMove(e) { 
+            if (e.touches.length > 1) {
+                wasMultiTouch = true;
+                return;
+            }
+            if (e.touches.length === 1) { 
+                const delta = Math.abs(e.touches[0].clientX - touchStart.x) + Math.abs(e.touches[0].clientY - touchStart.y); 
+                if (delta > 10) isTouchDrag = true;
+                
+                // Update drag position in move mode
+                if (isNodeDragMode && touchDragTarget) {
+                    e.preventDefault(); // Prevent scrolling while dragging
+                    updateNodeDrag({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY });
+                }
+            } 
+        }
+        function onTouchEnd(e) { 
+            // Finish drag in move mode
+            if (isNodeDragMode && touchDragTarget) {
+                finishNodeDrag();
+                touchDragTarget = null;
+                return;
+            }
+            
+            // Ignore if this was part of a multi-touch gesture (pinch/pan)
+            if (wasMultiTouch) {
+                if (e.touches.length === 0) wasMultiTouch = false;
+                return;
+            }
+            if (isTouchDrag || e.changedTouches.length !== 1) return; 
+            const touch = e.changedTouches[0];
+            // Ignore touches on UI elements
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (target && target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #undo-btn, #depth-indicator, .modal-overlay, #radial-menu, #header, button, input, textarea, a')) return;
+            
+            // In move mode, don't select nodes
+            if (isMoveMode) return;
+            
+            mouse.x = (touch.clientX / window.innerWidth) * 2 - 1; 
+            mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1; 
+            raycaster.setFromCamera(mouse, camera); 
+            const visibleNodes = Array.from(nodes.values()).filter(n => n.visible); 
+            const intersects = raycaster.intersectObjects(visibleNodes); 
+            
+            const now = Date.now();
+            const isDoubleTap = (now - lastTapTime) < 300;
+            lastTapTime = now;
+            
+            if (intersects.length > 0) {
+                const mesh = intersects[0].object;
+                if (isDoubleTap && mesh.userData.children && mesh.userData.children.length > 0) {
+                    diveIntoNode(mesh);
+                } else {
+                    selectNode(mesh);
+                }
+            } else {
+                deselectNode();
+            }
+        }
 
         // Radial menu
         function showRadialMenu(mesh, screenPos) { if (radialMenuHideTimeout) { clearTimeout(radialMenuHideTimeout); radialMenuHideTimeout = null; } radialMenuNode = mesh; const nodeWorldRadius = mesh.geometry.parameters.radius * mesh.scale.x; const dist = camera.position.distanceTo(mesh.position); const fov = camera.fov * (Math.PI / 180); const screenHeight = window.innerHeight; const nodeScreenRadius = (nodeWorldRadius / (2 * dist * Math.tan(fov / 2))) * screenHeight; radialMenu.style.left = screenPos.x + 'px'; radialMenu.style.top = screenPos.y + 'px'; const toggleOffset = Math.max(nodeScreenRadius + 20, 40); const buttonScale = Math.min(1.8, Math.max(1, nodeScreenRadius / 50)); radialToggle.style.left = toggleOffset + 'px'; radialToggle.style.top = '0px'; radialToggle.style.transform = `translate(-50%, -50%) scale(${buttonScale})`; const baseButtonSize = 26; const scaledButtonSize = baseButtonSize * buttonScale; const ringWidth = scaledButtonSize + 16; const outerRadius = nodeScreenRadius + ringWidth; radialNodeHitArea.style.width = outerRadius * 2 + 'px'; radialNodeHitArea.style.height = outerRadius * 2 + 'px'; radialNodeHitArea.style.left = '0px'; radialNodeHitArea.style.top = '0px'; radialNodeHitArea.style.borderWidth = ringWidth + 'px'; radialMenu.classList.add('visible'); const diveBtn = document.querySelector('.radial-item[data-action="dive"]'); if (diveBtn) diveBtn.style.display = mesh.userData.children?.length > 0 ? 'flex' : 'none'; const linkBtn = document.querySelector('.radial-item[data-action="link"]'); if (linkBtn) linkBtn.style.display = mesh.userData.url ? 'flex' : 'none'; const deleteBtn = document.querySelector('.radial-item[data-action="delete"]'); if (deleteBtn) deleteBtn.style.display = mesh.userData.level === 0 ? 'none' : 'flex'; }
@@ -1460,8 +1661,8 @@
         window.addEventListener('mousemove', onMouseMoveForDrag);
         window.addEventListener('click', onClick);
         window.addEventListener('dblclick', onDoubleClick);
-        window.addEventListener('touchstart', onTouchStart, { passive: true });
-        window.addEventListener('touchmove', onTouchMove, { passive: true });
+        window.addEventListener('touchstart', onTouchStart, { passive: false });
+        window.addEventListener('touchmove', onTouchMove, { passive: false });
         window.addEventListener('touchend', onTouchEnd);
         renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
         document.getElementById('depth-back-btn').addEventListener('click', () => surfaceFromNode());
