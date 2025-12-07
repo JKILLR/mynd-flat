@@ -306,19 +306,20 @@
             .brand-text h1 { font-size: 18px; }
             .brand-text p { font-size: 9px; }
             
-            /* Top buttons - aligned row */
-            /* Top buttons - single row aligned */
+            /* Top buttons - aligned with header */
             #top-buttons { 
-                top: var(--space-3); 
+                top: calc(var(--space-3) + 4px); /* Offset to align with header center */
                 right: var(--space-3); 
                 gap: var(--space-2);
                 flex-wrap: nowrap;
                 align-items: center;
+                height: 40px;
             }
             #top-buttons > button { 
                 width: 40px !important; 
                 height: 40px !important;
                 flex-shrink: 0;
+                border-radius: 10px;
             }
             #search-container {
                 width: 40px;
@@ -468,9 +469,9 @@
                 right: var(--space-3); 
             }
             
-            /* Radial menu - larger touch targets */
-            .radial-item { width: 40px; height: 40px; }
-            .radial-toggle { width: 40px; height: 40px; }
+            /* Radial menu - larger touch targets on mobile */
+            .radial-item { width: 48px; height: 48px; font-size: 18px; }
+            .radial-toggle { width: 44px; height: 44px; font-size: 16px; }
             
             /* Node labels - larger on mobile */
             .node-label { font-size: 12px; padding: 4px 10px; }
@@ -1683,17 +1684,109 @@
         }
 
         // Radial menu
-        function showRadialMenu(mesh, screenPos) { if (radialMenuHideTimeout) { clearTimeout(radialMenuHideTimeout); radialMenuHideTimeout = null; } radialMenuNode = mesh; const nodeWorldRadius = mesh.geometry.parameters.radius * mesh.scale.x; const dist = camera.position.distanceTo(mesh.position); const fov = camera.fov * (Math.PI / 180); const screenHeight = window.innerHeight; const nodeScreenRadius = (nodeWorldRadius / (2 * dist * Math.tan(fov / 2))) * screenHeight; radialMenu.style.left = screenPos.x + 'px'; radialMenu.style.top = screenPos.y + 'px'; const toggleOffset = Math.max(nodeScreenRadius + 20, 40); const buttonScale = Math.min(1.8, Math.max(1, nodeScreenRadius / 50)); radialToggle.style.left = toggleOffset + 'px'; radialToggle.style.top = '0px'; radialToggle.style.transform = `translate(-50%, -50%) scale(${buttonScale})`; const baseButtonSize = 26; const scaledButtonSize = baseButtonSize * buttonScale; const ringWidth = scaledButtonSize + 16; const outerRadius = nodeScreenRadius + ringWidth; radialNodeHitArea.style.width = outerRadius * 2 + 'px'; radialNodeHitArea.style.height = outerRadius * 2 + 'px'; radialNodeHitArea.style.left = '0px'; radialNodeHitArea.style.top = '0px'; radialNodeHitArea.style.borderWidth = ringWidth + 'px'; radialMenu.classList.add('visible'); const diveBtn = document.querySelector('.radial-item[data-action="dive"]'); if (diveBtn) diveBtn.style.display = mesh.userData.children?.length > 0 ? 'flex' : 'none'; const linkBtn = document.querySelector('.radial-item[data-action="link"]'); if (linkBtn) linkBtn.style.display = mesh.userData.url ? 'flex' : 'none'; const deleteBtn = document.querySelector('.radial-item[data-action="delete"]'); if (deleteBtn) deleteBtn.style.display = mesh.userData.level === 0 ? 'none' : 'flex'; }
+        function showRadialMenu(mesh, screenPos) { 
+            if (radialMenuHideTimeout) { clearTimeout(radialMenuHideTimeout); radialMenuHideTimeout = null; } 
+            radialMenuNode = mesh; 
+            const nodeWorldRadius = mesh.geometry.parameters.radius * mesh.scale.x; 
+            const dist = camera.position.distanceTo(mesh.position); 
+            const fov = camera.fov * (Math.PI / 180); 
+            const screenHeight = window.innerHeight; 
+            const nodeScreenRadius = (nodeWorldRadius / (2 * dist * Math.tan(fov / 2))) * screenHeight; 
+            const isMobile = window.innerWidth <= 768;
+            radialMenu.style.left = screenPos.x + 'px'; 
+            radialMenu.style.top = screenPos.y + 'px'; 
+            // Toggle position - closer to node edge, consistent spacing
+            const toggleOffset = Math.max(nodeScreenRadius + 25, isMobile ? 45 : 35); 
+            const buttonScale = isMobile ? 1.4 : Math.min(1.5, Math.max(1, nodeScreenRadius / 50)); 
+            radialToggle.style.left = toggleOffset + 'px'; 
+            radialToggle.style.top = '0px'; 
+            radialToggle.style.transform = `translate(-50%, -50%) scale(${buttonScale})`; 
+            const baseButtonSize = isMobile ? 40 : 26; 
+            const scaledButtonSize = baseButtonSize * buttonScale; 
+            const ringWidth = scaledButtonSize + 20; 
+            const outerRadius = nodeScreenRadius + ringWidth; 
+            radialNodeHitArea.style.width = outerRadius * 2 + 'px'; 
+            radialNodeHitArea.style.height = outerRadius * 2 + 'px'; 
+            radialNodeHitArea.style.left = '0px'; 
+            radialNodeHitArea.style.top = '0px'; 
+            radialNodeHitArea.style.borderWidth = ringWidth + 'px'; 
+            radialMenu.classList.add('visible'); 
+            const diveBtn = document.querySelector('.radial-item[data-action="dive"]'); 
+            if (diveBtn) diveBtn.style.display = mesh.userData.children?.length > 0 ? 'flex' : 'none'; 
+            const linkBtn = document.querySelector('.radial-item[data-action="link"]'); 
+            if (linkBtn) linkBtn.style.display = mesh.userData.url ? 'flex' : 'none'; 
+            const deleteBtn = document.querySelector('.radial-item[data-action="delete"]'); 
+            if (deleteBtn) deleteBtn.style.display = mesh.userData.level === 0 ? 'none' : 'flex'; 
+        }
         function hideRadialMenu() { radialMenu.classList.remove('visible'); radialMenuOpen = false; radialAnimating = false; radialToggle.classList.remove('active'); radialToggle.style.transform = 'translate(-50%, -50%)'; radialHitArea.classList.remove('active'); radialNodeHitArea.classList.remove('active'); radialItems.forEach(item => { item.classList.remove('visible'); item.style.opacity = ''; item.style.transform = ''; }); radialMenuNode = null; }
         function toggleRadialItems() {
             radialMenuOpen = !radialMenuOpen; radialToggle.classList.toggle('active', radialMenuOpen); radialAnimating = true;
             if (radialMenuOpen && radialMenuNode) {
-                const nodeWorldRadius = radialMenuNode.geometry.parameters.radius * radialMenuNode.scale.x; const dist = camera.position.distanceTo(radialMenuNode.position); const fov = camera.fov * (Math.PI / 180); const screenHeight = window.innerHeight; const nodeScreenRadius = (nodeWorldRadius / (2 * dist * Math.tan(fov / 2))) * screenHeight; const itemRadius = Math.max(nodeScreenRadius + 20, 40); const buttonScale = Math.min(1.8, Math.max(1, nodeScreenRadius / 50)); const baseButtonSize = 26; const scaledButtonSize = baseButtonSize * buttonScale; const visibleItems = Array.from(radialItems).filter(item => item.style.display !== 'none'); const totalArc = Math.PI * 0.85; const arcPerItem = visibleItems.length > 1 ? totalArc / (visibleItems.length - 1) : 0; const startAngle = -Math.PI * 0.1; const duration = 400; const startTime = Date.now(); const hitAreaRadius = itemRadius + scaledButtonSize + 10; radialHitArea.style.width = hitAreaRadius * 2 + 'px'; radialHitArea.style.height = hitAreaRadius + 'px'; radialHitArea.style.left = -hitAreaRadius + 'px'; radialHitArea.style.top = -hitAreaRadius + 'px'; radialHitArea.classList.add('active'); radialNodeHitArea.classList.add('active'); visibleItems.forEach(item => { item.style.left = itemRadius + 'px'; item.style.top = '0px'; item.classList.add('visible'); });
-                function animateExpand() { const elapsed = Date.now() - startTime; const progress = Math.min(elapsed / duration, 1); const currentDist = camera.position.distanceTo(radialMenuNode.position); const currentNodeScreenRadius = (nodeWorldRadius / (2 * currentDist * Math.tan(fov / 2))) * screenHeight; const currentItemRadius = Math.max(currentNodeScreenRadius + 20, 40); const currentButtonScale = Math.min(1.8, Math.max(1, currentNodeScreenRadius / 50)); const ease = 1 - Math.pow(1 - progress, 3); visibleItems.forEach((item, i) => { const itemDelay = i * 0.08; const itemProgress = Math.max(0, Math.min(1, (ease - itemDelay) / (1 - itemDelay * 0.5))); const itemEase = 1 - Math.pow(1 - itemProgress, 2); const targetAngle = startAngle - (i * arcPerItem); const currentAngle = targetAngle * itemEase; const x = Math.cos(currentAngle) * currentItemRadius; const y = Math.sin(currentAngle) * currentItemRadius; const scale = (0.5 + 0.5 * itemEase) * currentButtonScale; item.style.left = x + 'px'; item.style.top = y + 'px'; item.style.transform = `translate(-50%, -50%) scale(${scale})`; item.style.opacity = itemEase; }); radialToggle.style.left = currentItemRadius + 'px'; radialToggle.style.transform = `translate(-50%, -50%) scale(${currentButtonScale})`; if (progress < 1) requestAnimationFrame(animateExpand); else { const finalDist = camera.position.distanceTo(radialMenuNode.position); const finalNodeScreenRadius = (nodeWorldRadius / (2 * finalDist * Math.tan(fov / 2))) * screenHeight; const finalButtonScale = Math.min(1.8, Math.max(1, finalNodeScreenRadius / 50)); visibleItems.forEach(item => { item.style.transform = `translate(-50%, -50%) scale(${finalButtonScale})`; item.style.opacity = '1'; }); radialAnimating = false; } }
+                const nodeWorldRadius = radialMenuNode.geometry.parameters.radius * radialMenuNode.scale.x; 
+                const dist = camera.position.distanceTo(radialMenuNode.position); 
+                const fov = camera.fov * (Math.PI / 180); 
+                const screenHeight = window.innerHeight; 
+                const nodeScreenRadius = (nodeWorldRadius / (2 * dist * Math.tan(fov / 2))) * screenHeight; 
+                const isMobile = window.innerWidth <= 768;
+                // Larger radius on mobile for better touch targets
+                const itemRadius = Math.max(nodeScreenRadius + (isMobile ? 50 : 30), isMobile ? 70 : 50); 
+                const buttonScale = isMobile ? 1.4 : Math.min(1.5, Math.max(1, nodeScreenRadius / 50)); 
+                const baseButtonSize = isMobile ? 40 : 26; 
+                const scaledButtonSize = baseButtonSize * buttonScale; 
+                const visibleItems = Array.from(radialItems).filter(item => item.style.display !== 'none'); 
+                // Wider arc for better spacing
+                const totalArc = Math.PI * 1.0; 
+                const arcPerItem = visibleItems.length > 1 ? totalArc / (visibleItems.length - 1) : 0; 
+                const startAngle = -Math.PI * 0.0; // Start from right
+                const duration = 400; 
+                const startTime = Date.now(); 
+                const hitAreaRadius = itemRadius + scaledButtonSize + 20; 
+                radialHitArea.style.width = hitAreaRadius * 2 + 'px'; 
+                radialHitArea.style.height = hitAreaRadius + 'px'; 
+                radialHitArea.style.left = -hitAreaRadius + 'px'; 
+                radialHitArea.style.top = -hitAreaRadius + 'px'; 
+                radialHitArea.classList.add('active'); 
+                radialNodeHitArea.classList.add('active'); 
+                visibleItems.forEach(item => { item.style.left = itemRadius + 'px'; item.style.top = '0px'; item.classList.add('visible'); });
+                function animateExpand() { 
+                    const elapsed = Date.now() - startTime; 
+                    const progress = Math.min(elapsed / duration, 1); 
+                    const currentDist = camera.position.distanceTo(radialMenuNode.position); 
+                    const currentNodeScreenRadius = (nodeWorldRadius / (2 * currentDist * Math.tan(fov / 2))) * screenHeight; 
+                    const currentItemRadius = Math.max(currentNodeScreenRadius + (isMobile ? 50 : 30), isMobile ? 70 : 50); 
+                    const currentButtonScale = isMobile ? 1.4 : Math.min(1.5, Math.max(1, currentNodeScreenRadius / 50)); 
+                    const ease = 1 - Math.pow(1 - progress, 3); 
+                    visibleItems.forEach((item, i) => { 
+                        const itemDelay = i * 0.08; 
+                        const itemProgress = Math.max(0, Math.min(1, (ease - itemDelay) / (1 - itemDelay * 0.5))); 
+                        const itemEase = 1 - Math.pow(1 - itemProgress, 2); 
+                        const targetAngle = startAngle - (i * arcPerItem); 
+                        const currentAngle = targetAngle * itemEase; 
+                        const x = Math.cos(currentAngle) * currentItemRadius; 
+                        const y = Math.sin(currentAngle) * currentItemRadius; 
+                        const scale = (0.5 + 0.5 * itemEase) * currentButtonScale; 
+                        item.style.left = x + 'px'; 
+                        item.style.top = y + 'px'; 
+                        item.style.transform = `translate(-50%, -50%) scale(${scale})`; 
+                        item.style.opacity = itemEase; 
+                    }); 
+                    // Keep toggle at fixed position to the right
+                    const toggleRadius = Math.max(currentNodeScreenRadius + 25, isMobile ? 45 : 35);
+                    radialToggle.style.left = toggleRadius + 'px'; 
+                    radialToggle.style.transform = `translate(-50%, -50%) scale(${currentButtonScale})`; 
+                    if (progress < 1) requestAnimationFrame(animateExpand); 
+                    else { 
+                        const finalDist = camera.position.distanceTo(radialMenuNode.position); 
+                        const finalNodeScreenRadius = (nodeWorldRadius / (2 * finalDist * Math.tan(fov / 2))) * screenHeight; 
+                        const finalButtonScale = isMobile ? 1.4 : Math.min(1.5, Math.max(1, finalNodeScreenRadius / 50)); 
+                        visibleItems.forEach(item => { item.style.transform = `translate(-50%, -50%) scale(${finalButtonScale})`; item.style.opacity = '1'; }); 
+                        radialAnimating = false; 
+                    } 
+                }
                 animateExpand();
             } else {
-                const visibleItems = Array.from(radialItems).filter(item => item.classList.contains('visible')); radialHitArea.classList.remove('active'); radialNodeHitArea.classList.remove('active'); if (!radialMenuNode || visibleItems.length === 0) { visibleItems.forEach(item => item.classList.remove('visible')); radialAnimating = false; return; } const nodeWorldRadius = radialMenuNode.geometry.parameters.radius * radialMenuNode.scale.x; const fov = camera.fov * (Math.PI / 180); const screenHeight = window.innerHeight; const duration = 250; const startTime = Date.now(); const startPositions = visibleItems.map(item => ({ x: parseFloat(item.style.left) || 0, y: parseFloat(item.style.top) || 0 }));
-                function animateCollapse() { const elapsed = Date.now() - startTime; const progress = Math.min(elapsed / duration, 1); const ease = progress * progress; const currentDist = camera.position.distanceTo(radialMenuNode.position); const currentNodeScreenRadius = (nodeWorldRadius / (2 * currentDist * Math.tan(fov / 2))) * screenHeight; const currentItemRadius = Math.max(currentNodeScreenRadius + 20, 40); const currentButtonScale = Math.min(1.8, Math.max(1, currentNodeScreenRadius / 50)); visibleItems.forEach((item, i) => { const start = startPositions[i]; const x = start.x + (currentItemRadius - start.x) * ease; const y = start.y + (0 - start.y) * ease; const scale = currentButtonScale * (1 - 0.5 * ease); item.style.left = x + 'px'; item.style.top = y + 'px'; item.style.transform = `translate(-50%, -50%) scale(${scale})`; item.style.opacity = 1 - ease; }); radialToggle.style.left = currentItemRadius + 'px'; if (progress < 1) requestAnimationFrame(animateCollapse); else { visibleItems.forEach(item => { item.classList.remove('visible'); item.style.opacity = ''; item.style.transform = ''; }); radialToggle.style.transform = 'translate(-50%, -50%)'; radialAnimating = false; } }
+                const visibleItems = Array.from(radialItems).filter(item => item.classList.contains('visible')); radialHitArea.classList.remove('active'); radialNodeHitArea.classList.remove('active'); if (!radialMenuNode || visibleItems.length === 0) { visibleItems.forEach(item => item.classList.remove('visible')); radialAnimating = false; return; } const nodeWorldRadius = radialMenuNode.geometry.parameters.radius * radialMenuNode.scale.x; const fov = camera.fov * (Math.PI / 180); const screenHeight = window.innerHeight; const duration = 250; const startTime = Date.now(); const startPositions = visibleItems.map(item => ({ x: parseFloat(item.style.left) || 0, y: parseFloat(item.style.top) || 0 })); const isMobile = window.innerWidth <= 768;
+                function animateCollapse() { const elapsed = Date.now() - startTime; const progress = Math.min(elapsed / duration, 1); const ease = progress * progress; const currentDist = camera.position.distanceTo(radialMenuNode.position); const currentNodeScreenRadius = (nodeWorldRadius / (2 * currentDist * Math.tan(fov / 2))) * screenHeight; const currentItemRadius = Math.max(currentNodeScreenRadius + (isMobile ? 50 : 30), isMobile ? 70 : 50); const currentButtonScale = isMobile ? 1.4 : Math.min(1.5, Math.max(1, currentNodeScreenRadius / 50)); visibleItems.forEach((item, i) => { const start = startPositions[i]; const x = start.x + (currentItemRadius - start.x) * ease; const y = start.y + (0 - start.y) * ease; const scale = currentButtonScale * (1 - 0.5 * ease); item.style.left = x + 'px'; item.style.top = y + 'px'; item.style.transform = `translate(-50%, -50%) scale(${scale})`; item.style.opacity = 1 - ease; }); const toggleRadius = Math.max(currentNodeScreenRadius + 25, isMobile ? 45 : 35); radialToggle.style.left = toggleRadius + 'px'; if (progress < 1) requestAnimationFrame(animateCollapse); else { visibleItems.forEach(item => { item.classList.remove('visible'); item.style.opacity = ''; item.style.transform = ''; }); radialToggle.style.transform = 'translate(-50%, -50%)'; radialAnimating = false; } }
                 animateCollapse();
             }
         }
