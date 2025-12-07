@@ -225,14 +225,14 @@
         .toast.exiting { animation: toastOut var(--duration-normal) var(--ease-out) forwards; }
         @keyframes toastIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-20px); } }
-        #radial-menu { position: fixed; z-index: 200; pointer-events: none; opacity: 0; transition: opacity var(--duration-fast); }
+        #radial-menu { position: fixed; z-index: 300; pointer-events: none; opacity: 0; transition: opacity var(--duration-fast); }
         #radial-menu.visible { opacity: 1; pointer-events: auto; }
         .radial-toggle { position: absolute; width: 24px; height: 24px; border-radius: 50%; background: var(--glass-bg);
             backdrop-filter: blur(var(--glass-blur)); border: 2px solid var(--glass-border); box-shadow: var(--shadow-md);
             cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary);
-            font-size: 12px; font-weight: bold; transform: translate(-50%, -50%); z-index: 100; }
+            font-size: 12px; font-weight: bold; transform: translate(-50%, -50%); z-index: 310; touch-action: manipulation; }
         .radial-toggle:hover, .radial-toggle.active { background: var(--coral); color: white; border-color: var(--coral); box-shadow: var(--shadow-glow); }
-        .radial-items { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 100; }
+        .radial-items { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 305; }
         .radial-hit-area, .radial-node-hit-area { position: absolute; pointer-events: none; z-index: 1; }
         .radial-hit-area.active, .radial-node-hit-area.active { pointer-events: auto; }
         .radial-node-hit-area { border-radius: 50%; transform: translate(-50%, -50%); box-sizing: border-box;
@@ -240,7 +240,7 @@
         .radial-item { position: absolute; width: 28px; height: 28px; border-radius: 50%; background: var(--glass-bg);
             backdrop-filter: blur(var(--glass-blur)); border: 2px solid var(--glass-border); box-shadow: var(--shadow-md);
             cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary);
-            font-size: 13px; opacity: 0; transform: translate(-50%, -50%) scale(0.5); pointer-events: none; }
+            font-size: 13px; opacity: 0; transform: translate(-50%, -50%) scale(0.5); pointer-events: none; z-index: 305; touch-action: manipulation; }
         .radial-item.visible { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
         .radial-item:hover { background: var(--coral); color: white; border-color: var(--coral); box-shadow: var(--shadow-glow); }
         .radial-item[data-action="link"]:hover { background: var(--teal); border-color: var(--teal); }
@@ -1587,7 +1587,7 @@
         function onClick(e) { 
             if (isNodeDragMode) { finishNodeDrag(); return; } 
             if (isDragging) return; 
-            if (e.target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #depth-indicator, .modal-overlay, #radial-menu')) return; 
+            if (e.target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #depth-indicator, .modal-overlay, #radial-menu, .radial-item, .radial-toggle')) return; 
             if (radialMenuOpen) { hideRadialMenu(); return; } 
             if (isMoveMode) return; // Don't select nodes in move mode
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1; 
@@ -1657,9 +1657,15 @@
             }
             if (isTouchDrag || e.changedTouches.length !== 1) return; 
             const touch = e.changedTouches[0];
-            // Ignore touches on UI elements
+            // Ignore touches on UI elements - include radial items explicitly
             const target = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (target && target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #undo-btn, #depth-indicator, .modal-overlay, #radial-menu, #header, button, input, textarea, a')) return;
+            if (target && target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #undo-btn, #depth-indicator, .modal-overlay, #radial-menu, .radial-item, .radial-toggle, #header, button, input, textarea, a')) return;
+            
+            // If radial menu is open, close it and don't do anything else
+            if (radialMenuOpen) {
+                hideRadialMenu();
+                return;
+            }
             
             // In move mode, don't select nodes
             if (isMoveMode) return;
@@ -1903,10 +1909,37 @@
         }
 
         radialToggle.addEventListener('click', (e) => { e.stopPropagation(); toggleRadialItems(); });
+        radialToggle.addEventListener('touchend', (e) => { e.stopPropagation(); e.preventDefault(); toggleRadialItems(); });
         radialToggle.addEventListener('mouseenter', () => { if (radialMenuHideTimeout) { clearTimeout(radialMenuHideTimeout); radialMenuHideTimeout = null; } if (!radialMenuOpen && !radialAnimating) toggleRadialItems(); });
         radialMenu.addEventListener('mouseenter', () => { if (radialMenuHideTimeout) { clearTimeout(radialMenuHideTimeout); radialMenuHideTimeout = null; } });
         radialMenu.addEventListener('mouseleave', () => { if (!radialMenuHideTimeout) { radialMenuHideTimeout = setTimeout(() => { if (radialMenuNode && hoveredNode === radialMenuNode) { radialMenuHideTimeout = null; return; } hideRadialMenu(); radialMenuHideTimeout = null; }, 200); } });
-        radialItems.forEach(item => { item.addEventListener('click', (e) => { e.stopPropagation(); e.preventDefault(); if (!radialMenuNode || radialAnimating) return; const targetNode = radialMenuNode; const targetNodeId = targetNode.userData.id; const targetNodeLabel = targetNode.userData.label; const targetNodeLevel = targetNode.userData.level; const targetNodeChildren = targetNode.userData.children; const targetNodeUrl = targetNode.userData.url; const action = item.dataset.action; hideRadialMenu(); switch (action) { case 'add': store.selectedNodeId = targetNodeId; app.openModal('add', targetNodeId); break; case 'dive': if (targetNodeChildren?.length > 0) diveIntoNode(targetNode); break; case 'edit': store.selectedNodeId = targetNodeId; app.openModal('edit', targetNodeId); break; case 'move': startNodeDrag(targetNode); break; case 'link': if (targetNodeUrl) window.open(targetNodeUrl, '_blank'); break; case 'delete': if (targetNodeLevel === 0 || targetNodeId === store.data.id) { app.showToast('Cannot delete root node', 'error'); return; } if (confirm(`Delete "${targetNodeLabel}" and all its children?`)) { if (store.deleteNode(targetNodeId)) { app.showToast(`Deleted "${targetNodeLabel}"`, 'success'); bus.emit('ui:deselect'); } } break; } }); });
+        
+        function handleRadialItemAction(item, e) {
+            e.stopPropagation(); 
+            e.preventDefault(); 
+            if (!radialMenuNode || radialAnimating) return; 
+            const targetNode = radialMenuNode; 
+            const targetNodeId = targetNode.userData.id; 
+            const targetNodeLabel = targetNode.userData.label; 
+            const targetNodeLevel = targetNode.userData.level; 
+            const targetNodeChildren = targetNode.userData.children; 
+            const targetNodeUrl = targetNode.userData.url; 
+            const action = item.dataset.action; 
+            hideRadialMenu(); 
+            switch (action) { 
+                case 'add': store.selectedNodeId = targetNodeId; app.openModal('add', targetNodeId); break; 
+                case 'dive': if (targetNodeChildren?.length > 0) diveIntoNode(targetNode); break; 
+                case 'edit': store.selectedNodeId = targetNodeId; app.openModal('edit', targetNodeId); break; 
+                case 'move': startNodeDrag(targetNode); break; 
+                case 'link': if (targetNodeUrl) window.open(targetNodeUrl, '_blank'); break; 
+                case 'delete': if (targetNodeLevel === 0 || targetNodeId === store.data.id) { app.showToast('Cannot delete root node', 'error'); return; } if (confirm(`Delete "${targetNodeLabel}" and all its children?`)) { if (store.deleteNode(targetNodeId)) { app.showToast(`Deleted "${targetNodeLabel}"`, 'success'); bus.emit('ui:deselect'); } } break; 
+            }
+        }
+        
+        radialItems.forEach(item => { 
+            item.addEventListener('click', (e) => handleRadialItemAction(item, e)); 
+            item.addEventListener('touchend', (e) => handleRadialItemAction(item, e));
+        });
         function updateRadialMenuOnHover(mesh) { if (radialMenuOpen && radialMenuNode && radialMenuNode !== mesh) hideRadialMenu(); if (radialMenuOpen || radialAnimating) return; const pos = mesh.position.clone(); pos.project(camera); const screenX = (pos.x * 0.5 + 0.5) * window.innerWidth; const screenY = (-pos.y * 0.5 + 0.5) * window.innerHeight; showRadialMenu(mesh, { x: screenX, y: screenY }); }
 
         // Event listeners
