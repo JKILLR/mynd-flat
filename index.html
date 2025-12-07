@@ -765,10 +765,22 @@
                 
                 // Calculate branchAngle from parent's actual/target position relative to center
                 // This ensures children spread outward from the root
-                let parentAngle = parentData.branchAngle;
-                if (parentAngle === undefined || parentAngle === null) {
-                    // Calculate angle from center to parent position
+                let parentAngle;
+                if (parentData.level === 1) {
+                    // For level 1 nodes, always calculate from their position relative to root (0,0,0)
+                    // This ensures children always expand outward even if the node was moved
                     parentAngle = Math.atan2(parentTargetPos.z, parentTargetPos.x);
+                } else if (parentData.parent) {
+                    // For deeper nodes, calculate angle from grandparent to parent
+                    const grandparentMesh = nodes.get(parentData.parent.id);
+                    if (grandparentMesh) {
+                        const gpPos = grandparentMesh.position;
+                        parentAngle = Math.atan2(parentTargetPos.z - gpPos.z, parentTargetPos.x - gpPos.x);
+                    } else {
+                        parentAngle = parentData.branchAngle || Math.atan2(parentTargetPos.z, parentTargetPos.x);
+                    }
+                } else {
+                    parentAngle = parentData.branchAngle || Math.atan2(parentTargetPos.z, parentTargetPos.x);
                 }
                 
                 setTimeout(() => {
@@ -1387,6 +1399,21 @@
             } 
             nodeDragTarget.userData.basePosition = [nodeDragTarget.position.x, nodeDragTarget.position.y, nodeDragTarget.position.z]; 
             nodeDragTarget.userData.expandedPosition = [nodeDragTarget.position.x, nodeDragTarget.position.y, nodeDragTarget.position.z]; 
+            
+            // Update branchAngle based on new position
+            if (nodeDragTarget.userData.level === 1) {
+                // For level 1, angle from root (0,0,0) to node
+                nodeDragTarget.userData.branchAngle = Math.atan2(nodeDragTarget.position.z, nodeDragTarget.position.x);
+            } else if (nodeDragTarget.userData.parent) {
+                // For deeper levels, angle from parent to node
+                const parentMesh = nodes.get(nodeDragTarget.userData.parent.id);
+                if (parentMesh) {
+                    nodeDragTarget.userData.branchAngle = Math.atan2(
+                        nodeDragTarget.position.z - parentMesh.position.z,
+                        nodeDragTarget.position.x - parentMesh.position.x
+                    );
+                }
+            }
             
             // Update all moved children's positions
             childOffsets.forEach((offset, childId) => {
