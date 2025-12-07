@@ -1,4 +1,4 @@
-const CACHE = "mynd-v1";
+const CACHE = "mynd-flat-v1";
 const files = [
   "./",
   "index.html",
