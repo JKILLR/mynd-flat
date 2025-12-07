@@ -307,51 +307,88 @@
             .brand-text p { font-size: 9px; }
             
             /* Top buttons - aligned row */
+            /* Top buttons - single row aligned */
             #top-buttons { 
                 top: var(--space-3); 
                 right: var(--space-3); 
                 gap: var(--space-2);
+                flex-wrap: nowrap;
+                align-items: center;
             }
-            #top-buttons > button,
-            #top-buttons .search-wrapper { 
-                width: 40px; 
-                height: 40px; 
+            #top-buttons > button { 
+                width: 40px !important; 
+                height: 40px !important;
+                flex-shrink: 0;
+            }
+            #search-container {
+                width: 40px;
+                height: 40px;
+                flex-shrink: 0;
+            }
+            .search-wrapper { 
+                position: relative !important;
+                top: auto !important;
+                right: auto !important;
+                width: 40px !important; 
+                height: 40px !important; 
             }
             #menu-btn { display: flex; }
             .search-wrapper.expanded { 
-                position: fixed;
-                top: var(--space-3);
-                right: var(--space-3);
-                width: calc(100vw - 24px); 
+                position: fixed !important;
+                top: var(--space-3) !important;
+                right: var(--space-3) !important;
+                width: calc(100vw - 24px) !important; 
+                height: 44px !important;
+                z-index: calc(var(--z-ui) + 5);
+            }
+            .search-icon {
+                width: 40px;
+                height: 40px;
+            }
+            .search-wrapper.expanded .search-icon {
+                width: 44px;
+                height: 44px;
             }
             
             /* Breadcrumb */
             #depth-indicator { top: 75px; left: var(--space-3); right: auto; max-width: calc(100vw - 24px); }
             
-            /* Controls panel - bottom toolbar with BIGGER buttons */
+            /* Controls panel - individual floating buttons */
             #controls-panel { 
                 flex-direction: row; 
                 top: auto; 
-                bottom: 0; 
-                left: 0; 
-                right: 0; 
-                padding: var(--space-2) var(--space-3);
-                padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+                bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                padding: 0;
                 border-radius: 0;
-                justify-content: space-around;
-                gap: var(--space-2);
-                background: var(--glass-bg);
-                backdrop-filter: blur(20px);
+                justify-content: center;
+                gap: var(--space-3);
+                background: transparent;
+                backdrop-filter: none;
+                border: none;
             }
             .control-btn { 
-                width: 48px; 
-                height: 48px; 
+                width: 52px; 
+                height: 52px; 
                 padding: 0; 
                 justify-content: center;
-                border-radius: 12px;
+                border-radius: 16px;
+                background: var(--glass-bg);
+                backdrop-filter: blur(20px);
+                border: 1px solid var(--glass-border);
+                box-shadow: var(--shadow-md);
+            }
+            .control-btn:hover, .control-btn:active {
+                background: var(--glass-bg-light);
+            }
+            .control-btn.active {
+                background: var(--coral);
+                border-color: var(--coral);
             }
             .control-btn span.text { display: none; }
-            .control-btn .icon { font-size: 20px; opacity: 1; }
+            .control-btn .icon { font-size: 22px; opacity: 1; }
             
             /* Hide import/export/help on mobile - use menu instead */
             #export-btn, #import-btn, #help-btn { display: none; }
@@ -359,7 +396,7 @@
             
             /* Info panel - FIXED layout, above controls */
             #info-panel { 
-                bottom: 75px; 
+                bottom: 85px; 
                 left: var(--space-3); 
                 right: var(--space-3); 
                 width: auto;
@@ -413,7 +450,7 @@
             
             /* Help panel */
             #help-panel { 
-                bottom: 75px;
+                bottom: 85px;
                 left: var(--space-3);
                 right: var(--space-3);
                 top: auto;
@@ -424,7 +461,7 @@
             
             /* Quick capture */
             #quick-capture { 
-                bottom: 75px; 
+                bottom: 85px; 
                 left: var(--space-3); 
                 right: var(--space-3); 
             }
