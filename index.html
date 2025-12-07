@@ -691,17 +691,7 @@
         getAutoColor(parentId) { 
             const p = this.findNode(parentId); 
             if (!p) return NODE_COLORS[0]; 
-            const parentColor = p.color;
-            const siblingCount = p.children ? p.children.length : 0;
-            // Start with sibling-based offset, avoid parent color
-            let colorIndex = siblingCount % NODE_COLORS.length;
-            let color = NODE_COLORS[colorIndex];
-            // If same as parent, shift by 1
-            if (color === parentColor) {
-                colorIndex = (colorIndex + 1) % NODE_COLORS.length;
-                color = NODE_COLORS[colorIndex];
-            }
-            return color;
+            return p.color;
         }
         addNode(parentId, nodeData) { const p = this.findNode(parentId); if (!p) return null; this.saveSnapshot('Add node'); if (!p.children) p.children = []; const autoColor = this.getAutoColor(parentId); const n = { id: nodeData.id || `node-${Date.now()}`, label: nodeData.label, color: nodeData.color || autoColor, description: nodeData.description || '', url: nodeData.url || '', children: [] }; p.children.push(n); this.expandedNodes.add(parentId); this.save(); bus.emit('node:added', { parent: p, node: n }); return n; }
         updateNode(id, updates) { const n = this.findNode(id); if (!n) return null; this.saveSnapshot('Edit node'); Object.assign(n, updates); this.save(); bus.emit('node:updated', { node: n }); return n; }
@@ -979,9 +969,8 @@
                 const baseSpread = Math.PI * 0.65; // ~117 degrees for 2 children (increased from 0.55)
                 const spreadAngle = Math.min(Math.PI * 1.0, baseSpread + (total - 2) * 0.2); // Increase spread for more children, max 180 degrees
                 const halfSpread = spreadAngle / 2;
-                // Use outward angle from center to parent, not parent's incoming branch
-                const outwardAngle = Math.atan2(parentPos[2], parentPos[0]);
-                let childAngle = total === 1 ? outwardAngle : outwardAngle - halfSpread + (spreadAngle / (total - 1)) * index;
+                // Use parentAngle (the direction the parent came from) for consistent child branching
+                let childAngle = total === 1 ? parentAngle : parentAngle - halfSpread + (spreadAngle / (total - 1)) * index;
                 const verticalOffset = (index - (total - 1) / 2) * (0.8 + level * 0.15) * 0.2;
                 // Increase radius when there are more siblings - more aggressive scaling
                 const adjustedBaseRadius = baseRadius + Math.max(0, (total - 2) * 0.5);
@@ -1172,9 +1161,23 @@
                             const angleSpread = Math.min(Math.PI * 1.0, baseSpread + (total - 2) * 0.2);
                             const halfSpread = angleSpread / 2; 
                             
-                            // Use outward angle from center (0,0,0) to parent, not parent's incoming branch angle
-                            // This makes children spread AWAY from center, not continue in same direction
-                            const outwardAngle = Math.atan2(parentPos.z, parentPos.x);
+                            // Use parent's branchAngle for outward direction (the direction parent points from its parent)
+                            // Fall back to angle from origin if no branchAngle set
+                            let outwardAngle;
+                            if (parentData.branchAngle !== undefined) {
+                                outwardAngle = parentData.branchAngle;
+                            } else if (parentData.level === 1) {
+                                // Level 1 nodes: use angle from origin
+                                outwardAngle = Math.atan2(parentPos.z, parentPos.x);
+                            } else {
+                                // Deeper nodes without branchAngle: calculate from grandparent
+                                const grandparentMesh = parentData.parent ? nodes.get(parentData.parent.id) : null;
+                                if (grandparentMesh) {
+                                    outwardAngle = Math.atan2(parentPos.z - grandparentMesh.position.z, parentPos.x - grandparentMesh.position.x);
+                                } else {
+                                    outwardAngle = Math.atan2(parentPos.z, parentPos.x);
+                                }
+                            }
                             
                             // Calculate child angle spreading from outward angle
                             let childAngle;
