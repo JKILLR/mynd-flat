@@ -319,8 +319,9 @@
             background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--glass-border);
             border-radius: 20px; padding: var(--space-6); text-align: center; display: none; min-width: 280px; }
         #voice-indicator.active { display: block; animation: fadeIn 0.2s ease-out; }
-        .voice-icon { font-size: 48px; margin-bottom: var(--space-4); }
-        .voice-icon.recording { animation: voiceIconPulse 1s ease-in-out infinite; }
+        .voice-icon { margin-bottom: var(--space-4); color: var(--coral); }
+        .voice-icon.recording svg { animation: voiceIconPulse 1s ease-in-out infinite; }
+        .voice-icon.processing { color: var(--teal); }
         @keyframes voiceIconPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
         .voice-status { font-family: var(--font-display); font-size: 16px; font-weight: 600; margin-bottom: var(--space-2); }
         .voice-transcript { font-size: 14px; color: var(--text-secondary); min-height: 40px; padding: var(--space-3);
@@ -570,7 +571,10 @@
 </head>
 <body>
     <div id="voice-indicator">
-        <div class="voice-icon" id="voice-icon">🎤</div>
+        <div class="voice-icon" id="voice-icon">
+            <svg id="voice-icon-mic" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            <svg id="voice-icon-brain" style="display:none" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 0-4 4c0 .74.2 1.43.56 2.02A4 4 0 0 0 6 12c0 1.2.52 2.27 1.35 3A4 4 0 0 0 6 18a4 4 0 0 0 4 4h.09c.49 0 .97-.07 1.41-.2"/><path d="M12 2a4 4 0 0 1 4 4c0 .74-.2 1.43-.56 2.02A4 4 0 0 1 18 12c0 1.2-.52 2.27-1.35 3A4 4 0 0 1 18 18a4 4 0 0 1-4 4h-.09c-.49 0-.97-.07-1.41-.2"/><path d="M12 2v20"/><path d="M9 10h6"/><path d="M9 14h6"/></svg>
+        </div>
         <div class="voice-status" id="voice-status">Listening...</div>
         <div class="voice-transcript" id="voice-transcript">Say something...</div>
         <div class="voice-hint">Tap anywhere or press Escape to cancel</div>
@@ -602,7 +606,7 @@
     <div id="menu-dropdown">
         <button class="menu-item" id="menu-search"><span><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span> Search</button>
         <button class="menu-item" id="menu-theme"><span id="menu-theme-icon">☽</span> Toggle Theme</button>
-        <button class="menu-item" id="menu-voice-settings"><span>🎤</span> Voice AI Settings</button>
+        <button class="menu-item" id="menu-voice-settings"><span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></span> Voice AI Settings</button>
         <div class="menu-divider"></div>
         <button class="menu-item" id="menu-export"><span>↓</span> Export</button>
         <button class="menu-item" id="menu-import"><span>↑</span> Import</button>
@@ -613,7 +617,7 @@
         <button class="control-btn" id="expand-all-btn"><span class="icon">◎</span><span class="text">Expand</span></button>
         <button class="control-btn" id="collapse-all-btn"><span class="icon">◉</span><span class="text">Collapse</span></button>
         <button class="control-btn" id="move-mode-btn"><span class="icon">✥</span><span class="text">Move</span></button>
-        <button class="control-btn" id="voice-btn"><span class="icon">🎤</span><span class="text">Voice</span></button>
+        <button class="control-btn" id="voice-btn"><span class="icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></span><span class="text">Voice</span></button>
         <div class="control-divider"></div>
         <button class="control-btn" id="add-root-btn"><span class="icon">+</span><span class="text">New</span></button>
         <button class="control-btn" id="export-btn"><span class="icon">↓</span><span class="text">Export</span></button>
@@ -2454,11 +2458,12 @@
     }
 
     // Voice AI System
+    const EMBEDDED_API_KEY = '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'; // Paste your API key here to share the app with voice enabled
     const voiceAI = {
         recognition: null,
         isRecording: false,
         isProcessing: false,
-        apiKey: localStorage.getItem('mynd_anthropic_api_key') || '',
+        apiKey: EMBEDDED_API_KEY || localStorage.getItem('mynd_anthropic_api_key') || '',
         
         init() {
             // Check for speech recognition support
@@ -2541,23 +2546,31 @@
             const voiceBtn = document.getElementById('voice-btn');
             const indicator = document.getElementById('voice-indicator');
             const icon = document.getElementById('voice-icon');
+            const micIcon = document.getElementById('voice-icon-mic');
+            const brainIcon = document.getElementById('voice-icon-brain');
             const status = document.getElementById('voice-status');
             
             voiceBtn.classList.remove('recording', 'processing');
             indicator.classList.remove('active');
-            icon.classList.remove('recording');
+            icon.classList.remove('recording', 'processing');
             
             if (state === 'recording') {
                 voiceBtn.classList.add('recording');
                 indicator.classList.add('active');
                 icon.classList.add('recording');
-                icon.textContent = '🎤';
+                micIcon.style.display = 'block';
+                brainIcon.style.display = 'none';
                 status.textContent = 'Listening...';
             } else if (state === 'processing') {
                 voiceBtn.classList.add('processing');
                 indicator.classList.add('active');
-                icon.textContent = '🧠';
+                icon.classList.add('processing');
+                micIcon.style.display = 'none';
+                brainIcon.style.display = 'block';
                 status.textContent = 'Thinking...';
+            } else {
+                micIcon.style.display = 'block';
+                brainIcon.style.display = 'none';
             }
         },
         
@@ -2661,7 +2674,12 @@ If the user's input is a task, idea, goal, or note, create an appropriate node. 
             const input = document.getElementById('api-key-input');
             const status = document.getElementById('api-key-status');
             
-            if (this.apiKey) {
+            if (EMBEDDED_API_KEY) {
+                status.textContent = '✓ API key embedded in app';
+                status.classList.add('configured');
+                input.value = '';
+                input.placeholder = 'Embedded key active (enter new to override)';
+            } else if (this.apiKey) {
                 input.value = this.apiKey;
                 status.textContent = '✓ API key configured';
                 status.classList.add('configured');
@@ -2687,6 +2705,11 @@ If the user's input is a task, idea, goal, or note, create an appropriate node. 
                 this.apiKey = key;
                 localStorage.setItem('mynd_anthropic_api_key', key);
                 app.showToast('API key saved', 'success');
+            } else if (EMBEDDED_API_KEY) {
+                // Clear override, use embedded
+                this.apiKey = EMBEDDED_API_KEY;
+                localStorage.removeItem('mynd_anthropic_api_key');
+                app.showToast('Using embedded API key', 'success');
             } else {
                 this.apiKey = '';
                 localStorage.removeItem('mynd_anthropic_api_key');
