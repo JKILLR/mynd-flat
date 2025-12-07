@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MYND — Mind Architect (Flat)</title>
+    <meta name="theme-color" content="#2D3142">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gunmetal: #2D3142;
+            --payne: #4F5D75;
+            --silver: #BFC0C0;
+            --white: #FFFFFF;
+            --coral: #EF8354;
+            --coral-light: #F4A67F;
+            --coral-dark: #D96B3F;
+            
+            --bg-primary: #1E2233;
+            --bg-secondary: #252A3E;
+            --bg-tertiary: #2D3347;
+            --text-primary: #FFFFFF;
+            --text-secondary: #BFC0C0;
+            --text-muted: #6B7A94;
+            --accent: var(--coral);
+            
+            --node-coral: #EF8354;
+            --node-teal: #4ECDC4;
+            --node-purple: #9B5DE5;
+            --node-yellow: #F7B731;
+            --node-pink: #FF6B9D;
+            --node-blue: #45B7D1;
+            --node-green: #26DE81;
+            --node-lavender: #A29BFE;
+            
+            --glass-bg: rgba(45, 49, 66, 0.45);
+            --glass-bg-light: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-blur: 20px;
+            
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            
+            --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-7: 32px;
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --duration-fast: 225ms; --duration-normal: 375ms; --duration-slow: 600ms;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.15);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.2);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.25);
+            --shadow-glow: 0 0 30px rgba(239,131,84,0.3);
+            --z-canvas: 1; --z-ui: 100; --z-modal: 200; --z-toast: 300;
+        }
+        
+        [data-theme="light"] {
+            --bg-primary: #F0F1F5;
+            --bg-secondary: #E8E9ED;
+            --bg-tertiary: #DCDEE3;
+            --text-primary: #2D3142;
+            --text-secondary: #4F5D75;
+            --text-muted: #8A919E;
+            --glass-bg: rgba(255, 255, 255, 0.55);
+            --glass-border: rgba(45, 49, 66, 0.12);
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+        body { font-family: var(--font-body); background: var(--bg-primary); color: var(--text-primary); overflow: hidden; min-height: 100vh; }
+        button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+        input, textarea { font-family: inherit; border: none; background: none; color: inherit; }
+        #background { position: fixed; inset: 0; z-index: var(--z-canvas); pointer-events: none;
+            background: radial-gradient(ellipse at 20% 20%, rgba(239,131,84,0.12) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 80%, rgba(78,205,196,0.08) 0%, transparent 50%),
+                        radial-gradient(ellipse at 50% 50%, rgba(155,93,229,0.06) 0%, transparent 60%),
+                        linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%); }
+        #canvas-container { position: fixed; inset: 0; z-index: calc(var(--z-canvas) + 1); }
+        #header { position: fixed; top: var(--space-6); left: var(--space-6); z-index: var(--z-ui); }
+        .brand { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) var(--space-4);
+            background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--glass-border);
+            border-radius: 14px; box-shadow: var(--shadow-md); }
+        .brand-logo { width: 42px; height: 42px; background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%);
+            border-radius: 12px; display: grid; place-items: center; font-family: var(--font-display);
+            font-weight: 700; font-size: 18px; color: white; box-shadow: var(--shadow-glow); }
+        .brand-text h1 { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+        .brand-text p { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); letter-spacing: 1.5px; text-transform: uppercase; }
+        #search-container { position: fixed; top: var(--space-6); right: 260px; z-index: var(--z-ui); }
+        #undo-btn { position: fixed; top: var(--space-6); right: 320px; z-index: var(--z-ui); width: 44px; height: 44px;
+            background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border);
+            border-radius: 12px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all var(--duration-fast); }
+        #undo-btn:hover { transform: scale(1.05); background: var(--glass-bg-light); color: var(--text-primary); }
+        #undo-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+        #undo-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+        #search-btn { width: 44px; height: 44px; background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border); border-radius: 12px; display: grid; place-items: center;
+            font-size: 16px; color: var(--text-secondary); box-shadow: var(--shadow-sm); cursor: pointer; }
+        #search-btn:hover { transform: scale(1.05); background: var(--glass-bg-light); color: var(--text-primary); }
+        .search-wrapper { position: absolute; top: 0; right: 0; width: 44px; height: 44px; background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); transition: width 0.3s var(--ease-out); }
+        .search-wrapper.expanded { width: 320px; }
+        .search-wrapper:focus-within { border-color: var(--coral); box-shadow: 0 0 20px rgba(239,131,84,0.2); }
+        #search-input { width: 100%; padding: var(--space-3) var(--space-4); padding-left: 42px; padding-right: 44px; font-size: 14px; background: transparent; outline: none; opacity: 0; transition: opacity 0.2s; }
+        .search-wrapper.expanded #search-input { opacity: 1; }
+        #search-input::placeholder { color: var(--text-muted); }
+        .search-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 18px; cursor: pointer; width: 44px; height: 44px; display: grid; place-items: center; }
+        .search-close { position: absolute; right: 0; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; cursor: pointer; width: 36px; height: 36px; display: none; place-items: center; border-radius: 8px; }
+        .search-wrapper.expanded .search-close { display: grid; }
+        .search-close:hover { background: var(--glass-bg-light); color: var(--text-primary); }
+        #search-results { display: none; border-top: 1px solid var(--glass-border); max-height: 240px; overflow-y: auto; }
+        #search-results.active { display: block; }
+        .search-result { padding: var(--space-3) var(--space-4); display: flex; align-items: center; gap: var(--space-3); cursor: pointer; }
+        .search-result:hover, .search-result.selected { background: var(--bg-tertiary); }
+        .search-result-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .search-result-label { font-size: 13px; font-weight: 500; }
+        .search-result-path { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-left: auto; }
+        #controls-panel { position: fixed; top: var(--space-6); right: var(--space-6); z-index: var(--z-ui);
+            display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3);
+            background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--glass-border);
+            border-radius: 16px; box-shadow: var(--shadow-md); }
+        .control-btn { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4);
+            border-radius: 10px; font-size: 12px; font-weight: 500; color: var(--text-secondary); white-space: nowrap; }
+        .control-btn:hover { background: var(--glass-bg-light); color: var(--text-primary); transform: translateX(-2px); }
+        .control-btn.active { background: var(--coral); color: white; }
+        .control-btn.active:hover { background: var(--coral-dark); transform: translateX(-2px); }
+        .control-btn .icon { font-size: 14px; opacity: 0.7; }
+        .control-divider { height: 1px; background: var(--glass-border); margin: 4px 0; }
+        #import-input { display: none; }
+        #theme-toggle { position: fixed; top: var(--space-6); right: 200px; z-index: var(--z-ui); width: 44px; height: 44px;
+            background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--glass-border);
+            border-radius: 12px; display: grid; place-items: center; font-size: 16px; box-shadow: var(--shadow-sm); color: var(--text-secondary); }
+        #theme-toggle:hover { transform: scale(1.05); background: var(--glass-bg-light); color: var(--text-primary); }
+        #theme-toggle svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+        #quick-capture { position: fixed; bottom: var(--space-6); left: 50%; transform: translateX(-50%); z-index: var(--z-ui);
+            width: min(500px, calc(100vw - 48px)); display: none; }
+        #quick-capture.active { display: block; animation: slideUp var(--duration-normal) var(--ease-out); }
+        @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        .quick-capture-wrapper { display: flex; gap: var(--space-2); background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border); border-radius: 14px; padding: var(--space-2); box-shadow: var(--shadow-lg); }
+        #quick-capture-input { flex: 1; padding: var(--space-3) var(--space-4); font-size: 14px; background: var(--bg-tertiary);
+            border: 1px solid var(--glass-border); border-radius: 10px; outline: none; }
+        #quick-capture-input:focus { border-color: var(--coral); }
+        .quick-capture-btn { padding: var(--space-3) var(--space-4); background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%);
+            color: white; border-radius: 10px; font-size: 13px; font-weight: 600; }
+        .quick-capture-btn:hover { box-shadow: var(--shadow-glow); }
+        .quick-capture-hint { text-align: center; font-size: 11px; color: var(--text-muted); margin-top: var(--space-2); }
+        #breadcrumb { position: fixed; top: 100px; left: var(--space-6); z-index: var(--z-ui); display: none;
+            align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--glass-border); border-radius: 10px;
+            font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+        #breadcrumb.active { display: flex; }
+        .breadcrumb-item { color: var(--text-secondary); }
+        .breadcrumb-item.current { color: var(--coral); font-weight: 500; }
+        .breadcrumb-separator { color: var(--text-muted); }
+        #info-panel { position: fixed; bottom: var(--space-6); left: 50%; transform: translateX(-50%); z-index: var(--z-ui);
+            width: min(620px, calc(100vw - 48px)); background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border); border-radius: 20px; padding: var(--space-5) var(--space-6);
+            display: none; box-shadow: var(--shadow-lg); }
+        #info-panel.active { display: flex; align-items: center; gap: var(--space-5); animation: panelSlide var(--duration-slow) var(--ease-out); }
+        @keyframes panelSlide { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        .panel-header { display: flex; align-items: center; gap: var(--space-3); }
+        .panel-color-dot { width: 14px; height: 14px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); }
+        #node-title { font-family: var(--font-display); font-size: 18px; font-weight: 600; white-space: nowrap; }
+        #close-btn { width: 32px; height: 32px; display: grid; place-items: center; background: var(--glass-bg-light);
+            border: 1px solid var(--glass-border); border-radius: 10px; font-size: 18px; color: var(--text-muted); }
+        #close-btn:hover { background: var(--coral); color: white; }
+        .panel-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-4); }
+        #node-details { font-size: 13px; color: var(--text-secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .node-meta { display: flex; gap: var(--space-2); }
+        .meta-tag { font-family: var(--font-mono); font-size: 10px; padding: 4px 8px; background: var(--bg-tertiary); border-radius: 6px; color: var(--text-muted); }
+        .panel-actions { display: flex; gap: var(--space-2); }
+        .action-btn { padding: var(--space-3) var(--space-4); border-radius: 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+        .action-btn.primary { background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%); color: white; }
+        .action-btn.primary:hover { box-shadow: var(--shadow-glow); transform: translateY(-1px); }
+        .action-btn.secondary { background: var(--glass-bg-light); border: 1px solid var(--glass-border); color: var(--text-secondary); }
+        .action-btn.secondary:hover { background: var(--payne); color: white; }
+        .modal-overlay { position: fixed; inset: 0; z-index: var(--z-modal); background: rgba(30,34,51,0.7);
+            backdrop-filter: blur(8px); display: none; place-items: center; }
+        .modal-overlay.active { display: grid; animation: fadeIn var(--duration-normal); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-content { width: min(440px, calc(100vw - 48px)); background: var(--glass-bg); backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border); border-radius: 24px; padding: var(--space-7); box-shadow: var(--shadow-lg); }
+        .modal-content h3 { font-family: var(--font-display); font-size: 24px; font-weight: 600; margin-bottom: var(--space-6); }
+        .form-group { margin-bottom: var(--space-5); }
+        .form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: var(--space-2);
+            text-transform: uppercase; letter-spacing: 1px; }
+        .form-group input[type="text"], .form-group textarea { width: 100%; padding: var(--space-4); background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border); border-radius: 12px; font-size: 14px; outline: none; }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--coral); box-shadow: 0 0 15px rgba(239,131,84,0.15); }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .color-picker { display: flex; gap: var(--space-2); flex-wrap: wrap; max-width: 320px; }
+        .color-option { width: 32px; height: 32px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: transform 0.15s, border-color 0.15s; }
+        .color-option:hover { transform: scale(1.15); }
+        .color-option.selected { border-color: white; box-shadow: 0 0 12px currentColor; }
+        .modal-buttons { display: flex; gap: var(--space-3); margin-top: var(--space-6); }
+        .modal-buttons button { flex: 1; padding: var(--space-4); border-radius: 14px; font-size: 14px; font-weight: 600; }
+        #modal-cancel { background: var(--glass-bg-light); border: 1px solid var(--glass-border); color: var(--text-secondary); }
+        #modal-cancel:hover { background: var(--payne); color: white; }
+        #modal-submit { background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%); color: white; }
+        #modal-submit:hover { box-shadow: var(--shadow-glow); }
+        #toast-container { position: fixed; top: var(--space-6); left: 50%; transform: translateX(-50%); z-index: var(--z-toast);
+            display: flex; flex-direction: column; gap: var(--space-2); pointer-events: none; }
+        .toast { padding: var(--space-3) var(--space-5); background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border); border-radius: 12px; font-size: 13px; font-weight: 500;
+            display: flex; align-items: center; gap: var(--space-3); animation: toastIn var(--duration-normal) var(--ease-out);
+            box-shadow: var(--shadow-lg); pointer-events: auto; }
+        .toast.success { border-left: 4px solid var(--node-green); }
+        .toast.error { border-left: 4px solid var(--coral); }
+        .toast.exiting { animation: toastOut var(--duration-normal) var(--ease-out) forwards; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-20px); } }
+        #radial-menu { position: fixed; z-index: 200; pointer-events: none; opacity: 0; transition: opacity var(--duration-fast); }
+        #radial-menu.visible { opacity: 1; pointer-events: auto; }
+        .radial-toggle { position: absolute; width: 24px; height: 24px; border-radius: 50%; background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur)); border: 2px solid var(--glass-border); box-shadow: var(--shadow-md);
+            cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary);
+            font-size: 12px; font-weight: bold; transform: translate(-50%, -50%); z-index: 100; }
+        .radial-toggle:hover, .radial-toggle.active { background: var(--coral); color: white; border-color: var(--coral); box-shadow: var(--shadow-glow); }
+        .radial-items { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 100; }
+        .radial-hit-area, .radial-node-hit-area { position: absolute; pointer-events: none; z-index: 1; }
+        .radial-hit-area.active, .radial-node-hit-area.active { pointer-events: auto; }
+        .radial-node-hit-area { border-radius: 50%; transform: translate(-50%, -50%); box-sizing: border-box;
+            border-style: solid; border-color: rgba(128, 128, 128, 0.01); }
+        .radial-item { position: absolute; width: 28px; height: 28px; border-radius: 50%; background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur)); border: 2px solid var(--glass-border); box-shadow: var(--shadow-md);
+            cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary);
+            font-size: 13px; opacity: 0; transform: translate(-50%, -50%) scale(0.5); pointer-events: none; }
+        .radial-item.visible { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+        .radial-item:hover { background: var(--coral); color: white; border-color: var(--coral); box-shadow: var(--shadow-glow); }
+        .radial-item[data-action="delete"]:hover { background: #E55050; border-color: #E55050; }
+        .radial-item .tooltip { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); background: var(--gunmetal);
+            color: white; font-size: 9px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; opacity: 0; pointer-events: none; }
+        .radial-item:hover .tooltip { opacity: 1; }
+        .drag-mode-active { cursor: grab !important; }
+        .drag-mode-active:active { cursor: grabbing !important; }
+        .node-label { position: absolute; z-index: 100; font-family: var(--font-display); font-size: 11px; font-weight: 600;
+            letter-spacing: 0.5px; color: var(--text-primary); pointer-events: none; user-select: none; white-space: nowrap;
+            text-align: center; background: var(--glass-bg); backdrop-filter: blur(12px); padding: 5px 12px;
+            border-radius: 8px; border: 1px solid var(--glass-border); box-shadow: var(--shadow-sm); }
+        #tunnel-overlay { position: fixed; inset: 0; z-index: 50; pointer-events: none; opacity: 0; }
+        #tunnel-overlay.diving { animation: tunnelDive 1.5s ease-in-out forwards; }
+        #tunnel-overlay.surfacing { animation: tunnelSurface 1.05s ease-out forwards; }
+        @keyframes tunnelDive {
+            0% { opacity: 0; } 30% { opacity: 1; background: radial-gradient(circle at center, transparent 0%, transparent 8%, rgba(0,0,0,0.7) 25%, rgba(0,0,0,0.95) 100%); }
+            50% { opacity: 1; background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.9) 5%, rgba(0,0,0,1) 20%); }
+            70% { opacity: 1; } 100% { opacity: 0; }
+        }
+        @keyframes tunnelSurface { 0% { opacity: 0; } 30% { opacity: 1; background: radial-gradient(circle at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 20%, transparent 50%); } 100% { opacity: 0; } }
+        #depth-indicator { position: fixed; top: 90px; left: 50%; transform: translateX(-50%); z-index: var(--z-ui);
+            display: none; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-5);
+            background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--glass-border);
+            border-radius: 14px; box-shadow: var(--shadow-md); }
+        #depth-indicator.active { display: flex; }
+        .depth-back-btn { width: 36px; height: 36px; display: grid; place-items: center; background: var(--glass-bg-light);
+            border: 1px solid var(--glass-border); border-radius: 10px; font-size: 18px; color: var(--text-secondary); cursor: pointer; }
+        .depth-back-btn:hover { background: var(--coral); color: white; }
+        .depth-path { display: flex; align-items: center; gap: var(--space-2); font-size: 13px; }
+        .depth-path-item { padding: var(--space-2) var(--space-3); background: var(--glass-bg-light); border-radius: 8px; cursor: pointer; }
+        .depth-path-item:hover { background: var(--payne); color: white; }
+        .depth-path-item.current { background: var(--coral); color: white; }
+        .depth-path-separator { color: var(--text-muted); font-size: 10px; }
+        .depth-hint { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); padding: 4px 8px;
+            background: var(--glass-bg-light); border-radius: 6px; margin-left: var(--space-2); }
+        #loading { position: fixed; inset: 0; z-index: 9999; background: var(--bg-primary); display: grid; place-items: center; }
+        #loading.hidden { opacity: 0; pointer-events: none; transition: opacity var(--duration-slow); }
+        .loader { text-align: center; }
+        .loader-text { font-family: var(--font-display); font-size: 28px; font-weight: 700; margin-bottom: var(--space-5); letter-spacing: 3px; }
+        .loader-bar { width: 140px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin: 0 auto; }
+        .loader-bar-fill { height: 100%; background: linear-gradient(90deg, var(--coral) 0%, var(--coral-light) 100%); animation: loading 1.5s ease-in-out infinite; }
+        @keyframes loading { 0% { width: 0%; margin-left: 0%; } 50% { width: 50%; margin-left: 25%; } 100% { width: 0%; margin-left: 100%; } }
+        #help-panel { position: fixed; bottom: var(--space-6); left: var(--space-6); z-index: var(--z-ui);
+            background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--glass-border);
+            border-radius: 14px; padding: var(--space-4); display: none; min-width: 220px; }
+        #help-panel.active { display: block; }
+        .help-title { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-bottom: var(--space-3); letter-spacing: 1px; text-transform: uppercase; }
+        .help-item { display: flex; align-items: center; gap: var(--space-3); padding: 4px 0; font-size: 12px; color: var(--text-secondary); }
+        .help-key { font-family: var(--font-mono); font-size: 10px; padding: 3px 6px; background: var(--bg-tertiary);
+            border: 1px solid var(--glass-border); border-radius: 4px; min-width: 28px; text-align: center; color: var(--text-muted); }
+        @media (max-width: 768px) {
+            #search-container { right: var(--space-3); top: auto; bottom: 100px; }
+            .search-wrapper.expanded { width: calc(100vw - 100px); }
+            #theme-toggle { right: 60px; top: auto; bottom: 100px; }
+            #undo-btn { right: 110px; top: auto; bottom: 100px; }
+            #controls-panel { flex-direction: row; flex-wrap: wrap; top: auto; bottom: var(--space-6); right: var(--space-3); left: var(--space-3); justify-content: center; }
+            .control-btn span.text { display: none; }
+            #info-panel { bottom: 100px; }
+            #quick-capture { bottom: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading"><div class="loader"><div class="loader-text">MYND</div><div class="loader-bar"><div class="loader-bar-fill"></div></div></div></div>
+    <div id="background"></div>
+    <div id="tunnel-overlay"></div>
+    <div id="canvas-container" tabindex="0"></div>
+    <div id="depth-indicator"><button class="depth-back-btn" id="depth-back-btn">←</button><div class="depth-path" id="depth-path"></div><span class="depth-hint">Esc to surface</span></div>
+    <header id="header"><div class="brand"><div class="brand-logo">M</div><div class="brand-text"><h1>MYND</h1><p>Mind Architect</p></div></div></header>
+    <button id="theme-toggle"><svg id="theme-icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><svg id="theme-icon-sun" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+    <button id="undo-btn" title="Undo (Ctrl+Z)" disabled><svg viewBox="0 0 24 24"><path d="M3 10h10a5 5 0 0 1 5 5v2M3 10l4-4M3 10l4 4"/></svg></button>
+    <div id="search-container"><div class="search-wrapper"><span class="search-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input type="text" id="search-input" placeholder="Search thoughts..." autocomplete="off"><span class="search-close">×</span><div id="search-results"></div></div></div>
+    <nav id="controls-panel">
+        <button class="control-btn" id="reset-view-btn"><span class="icon">⌂</span><span class="text">Reset</span></button>
+        <button class="control-btn" id="expand-all-btn"><span class="icon">◎</span><span class="text">Expand</span></button>
+        <button class="control-btn" id="collapse-all-btn"><span class="icon">◉</span><span class="text">Collapse</span></button>
+        <button class="control-btn" id="move-mode-btn"><span class="icon">✥</span><span class="text">Move</span></button>
+        <div class="control-divider"></div>
+        <button class="control-btn" id="add-root-btn"><span class="icon">+</span><span class="text">New</span></button>
+        <button class="control-btn" id="export-btn"><span class="icon">↓</span><span class="text">Export</span></button>
+        <button class="control-btn" id="import-btn"><span class="icon">↑</span><span class="text">Import</span></button>
+        <button class="control-btn" id="help-btn"><span class="icon">?</span></button>
+    </nav>
+    <input type="file" id="import-input" accept=".json">
+    <nav id="breadcrumb"><span id="breadcrumb-path"></span></nav>
+    <aside id="help-panel">
+        <div class="help-title">Shortcuts</div>
+        <div class="help-item"><span class="help-key">Click</span> Select node</div>
+        <div class="help-item"><span class="help-key">2×Click</span> Dive into node</div>
+        <div class="help-item"><span class="help-key">Enter</span> Dive into selected</div>
+        <div class="help-item"><span class="help-key">Esc</span> Surface / Deselect</div>
+        <div class="help-item"><span class="help-key">⌘K</span> Search</div>
+        <div class="help-item"><span class="help-key">⌘Z</span> Undo</div>
+        <div class="help-item"><span class="help-key">Q</span> Quick capture</div>
+        <div class="help-item"><span class="help-key">↑↓←→</span> Navigate</div>
+    </aside>
+    <div id="quick-capture"><div class="quick-capture-wrapper"><input type="text" id="quick-capture-input" placeholder="Quick thought... (Enter to add)"><button class="quick-capture-btn" id="quick-capture-submit">Add</button></div><div class="quick-capture-hint">Press Esc to close • Adding to selected node or root</div></div>
+    <div id="radial-menu">
+        <div class="radial-hit-area" id="radial-hit-area"></div>
+        <div class="radial-node-hit-area" id="radial-node-hit-area"></div>
+        <button class="radial-toggle" id="radial-toggle">⋯</button>
+        <div class="radial-items">
+            <button class="radial-item" data-action="add"><span>+</span><span class="tooltip">Add Child</span></button>
+            <button class="radial-item" data-action="dive"><span>↓</span><span class="tooltip">Dive In</span></button>
+            <button class="radial-item" data-action="edit"><span>✎</span><span class="tooltip">Edit</span></button>
+            <button class="radial-item" data-action="move"><span>✥</span><span class="tooltip">Move</span></button>
+            <button class="radial-item" data-action="delete"><span>🗑</span><span class="tooltip">Delete</span></button>
+        </div>
+    </div>
+    <aside id="info-panel">
+        <div class="panel-header"><div class="panel-color-dot" id="panel-color-dot"></div><h2 id="node-title"></h2></div>
+        <div class="panel-info"><div id="node-details"></div><div class="node-meta" id="node-meta"></div></div>
+        <div class="panel-actions"><button class="action-btn secondary" id="edit-node-btn">Edit</button><button class="action-btn primary" id="add-node-btn">+ Add</button></div>
+        <button id="close-btn">×</button>
+    </aside>
+    <div class="modal-overlay" id="node-modal">
+        <div class="modal-content">
+            <h3 id="modal-title">Add Node</h3>
+            <div class="form-group"><label for="node-name-input">Name</label><input type="text" id="node-name-input" placeholder="Enter node name..." maxlength="40"></div>
+            <div class="form-group"><label for="node-desc-input">Description (optional)</label><textarea id="node-desc-input" placeholder="Add notes or details..." maxlength="500"></textarea></div>
+            <div class="form-group"><label>Color</label>
+                <div class="color-picker">
+                    <div class="color-option selected" data-color="#EF8354" style="background: #EF8354;"></div>
+                    <div class="color-option" data-color="#4ECDC4" style="background: #4ECDC4;"></div>
+                    <div class="color-option" data-color="#9B5DE5" style="background: #9B5DE5;"></div>
+                    <div class="color-option" data-color="#F7B731" style="background: #F7B731;"></div>
+                    <div class="color-option" data-color="#FF6B9D" style="background: #FF6B9D;"></div>
+                    <div class="color-option" data-color="#45B7D1" style="background: #45B7D1;"></div>
+                    <div class="color-option" data-color="#26DE81" style="background: #26DE81;"></div>
+                    <div class="color-option" data-color="#A29BFE" style="background: #A29BFE;"></div>
+                    <div class="color-option" data-color="#FF4444" style="background: #FF4444;"></div>
+                    <div class="color-option" data-color="#FFFFFF" style="background: #FFFFFF; border: 1px solid #666;"></div>
+                    <div class="color-option" data-color="#222222" style="background: #222222;"></div>
+                    <div class="color-option" data-color="#FF8C00" style="background: #FF8C00;"></div>
+                    <div class="color-option" data-color="#00CED1" style="background: #00CED1;"></div>
+                    <div class="color-option" data-color="#FF1493" style="background: #FF1493;"></div>
+                    <div class="color-option" data-color="#32CD32" style="background: #32CD32;"></div>
+                    <div class="color-option" data-color="#FFD700" style="background: #FFD700;"></div>
+                    <div class="color-option" data-color="#8B4513" style="background: #8B4513;"></div>
+                    <div class="color-option" data-color="#708090" style="background: #708090;"></div>
+                    <div class="color-option" data-color="#00FF7F" style="background: #00FF7F;"></div>
+                    <div class="color-option" data-color="#DC143C" style="background: #DC143C;"></div>
+                    <div class="color-option" data-color="#4169E1" style="background: #4169E1;"></div>
+                    <div class="color-option" data-color="#FF69B4" style="background: #FF69B4;"></div>
+                    <div class="color-option" data-color="#2F4F4F" style="background: #2F4F4F;"></div>
+                    <div class="color-option" data-color="#FFDAB9" style="background: #FFDAB9;"></div>
+                </div>
+            </div>
+            <div class="modal-buttons"><button id="modal-cancel">Cancel</button><button id="modal-submit">Add Node</button></div>
+        </div>
+    </div>
+    <div id="toast-container"></div>
+    <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+    <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // EventBus
+    class EventBus {
+        constructor() { this.listeners = new Map(); }
+        on(event, cb) { if (!this.listeners.has(event)) this.listeners.set(event, new Set()); this.listeners.get(event).add(cb); return () => this.off(event, cb); }
+        off(event, cb) { this.listeners.get(event)?.delete(cb); }
+        emit(event, data) { this.listeners.get(event)?.forEach(cb => cb(data)); }
+    }
+    const bus = new EventBus();
+
+    // Store
+    const STORAGE_KEY = 'mynd-mind-map-v13';
+    const defaultData = {
+        id: 'mynd', label: 'My Mind', color: '#EF8354', description: 'Your central idea hub',
+        children: [
+            { id: 'ideas', label: 'Ideas', color: '#4ECDC4', description: 'Creative sparks', children: [] },
+            { id: 'projects', label: 'Projects', color: '#9B5DE5', description: 'Active work', children: [] },
+            { id: 'goals', label: 'Goals', color: '#F7B731', description: 'Aspirations', children: [] }
+        ]
+    };
+
+    const NODE_COLORS = [
+        '#EF8354', '#4ECDC4', '#9B5DE5', '#F7B731', '#FF6B9D', '#45B7D1', '#26DE81', '#A29BFE', // Original
+        '#FF4444', '#FFFFFF', '#222222', '#FF8C00', '#00CED1', '#FF1493', '#32CD32', '#FFD700', // Red, White, Black, Orange, DarkCyan, DeepPink, LimeGreen, Gold
+        '#8B4513', '#708090', '#00FF7F', '#DC143C', '#4169E1', '#FF69B4', '#2F4F4F', '#FFDAB9'  // SaddleBrown, SlateGray, SpringGreen, Crimson, RoyalBlue, HotPink, DarkSlateGray, PeachPuff
+    ];
+
+    class Store {
+        constructor() { this.data = this.load(); this.selectedNodeId = null; this.expandedNodes = new Set(); this.undoStack = []; this.maxUndoSteps = 50; }
+        saveSnapshot(name = 'change') { this.undoStack.push({ data: JSON.parse(JSON.stringify(this.data)), expandedNodes: new Set(this.expandedNodes), actionName: name }); if (this.undoStack.length > this.maxUndoSteps) this.undoStack.shift(); bus.emit('undo:changed'); }
+        undo() { if (this.undoStack.length === 0) return { success: false }; const s = this.undoStack.pop(); this.data = s.data; this.expandedNodes = s.expandedNodes; this.save(); bus.emit('data:undone', { actionName: s.actionName }); bus.emit('undo:changed'); return { success: true, actionName: s.actionName }; }
+        load() { try { const s = localStorage.getItem(STORAGE_KEY); if (s) return JSON.parse(s); } catch (e) {} return JSON.parse(JSON.stringify(defaultData)); }
+        save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data)); bus.emit('data:saved'); } catch (e) {} }
+        findNode(id, node = this.data) { if (node.id === id) return node; if (node.children) for (const c of node.children) { const f = this.findNode(id, c); if (f) return f; } return null; }
+        findParent(id, node = this.data, parent = null) { if (node.id === id) return parent; if (node.children) for (const c of node.children) { const f = this.findParent(id, c, node); if (f !== undefined) return f; } return undefined; }
+        getSiblings(id) { const p = this.findParent(id); if (!p || !p.children) return []; return p.children; }
+        addNode(parentId, nodeData) { const p = this.findNode(parentId); if (!p) return null; this.saveSnapshot('Add node'); if (!p.children) p.children = []; const n = { id: nodeData.id || `node-${Date.now()}`, label: nodeData.label, color: nodeData.color || NODE_COLORS[p.children.length % NODE_COLORS.length], description: nodeData.description || '', children: [] }; p.children.push(n); this.expandedNodes.add(parentId); this.save(); bus.emit('node:added', { parent: p, node: n }); return n; }
+        updateNode(id, updates) { const n = this.findNode(id); if (!n) return null; this.saveSnapshot('Edit node'); Object.assign(n, updates); this.save(); bus.emit('node:updated', { node: n }); return n; }
+        deleteNode(id) { if (id === this.data.id) return false; const p = this.findParent(id); if (!p || !p.children) return false; const i = p.children.findIndex(c => c.id === id); if (i === -1) return false; this.saveSnapshot('Delete node'); const d = p.children.splice(i, 1)[0]; this.save(); bus.emit('node:deleted', { parentId: p.id, node: d }); return true; }
+        getAllNodes(node = this.data, result = []) { result.push(node); if (node.children) node.children.forEach(c => this.getAllNodes(c, result)); return result; }
+        searchNodes(query) { const q = query.toLowerCase(); return this.getAllNodes().filter(n => n.label.toLowerCase().includes(q) || (n.description && n.description.toLowerCase().includes(q))); }
+        getPath(id) { const path = []; const build = (node, target, cur = []) => { cur.push(node); if (node.id === target) { path.push(...cur); return true; } if (node.children) for (const c of node.children) if (build(c, target, [...cur])) return true; return false; }; build(this.data, id); return path; }
+        exportJSON() { return JSON.stringify(this.data, null, 2); }
+        importJSON(json) { try { const d = JSON.parse(json); if (!d.id || !d.label) throw new Error(); this.data = d; this.expandedNodes.clear(); this.save(); bus.emit('data:imported'); return true; } catch (e) { return false; } }
+        reset() { this.data = JSON.parse(JSON.stringify(defaultData)); this.expandedNodes.clear(); this.save(); bus.emit('data:reset'); }
+    }
+    const store = new Store();
+    let app = null;
+
+    // Theme
+    class ThemeManager {
+        constructor() { this.theme = localStorage.getItem('mynd-theme') || 'dark'; this.apply(); }
+        apply() { 
+            document.documentElement.setAttribute('data-theme', this.theme); 
+            const moonIcon = document.getElementById('theme-icon-moon');
+            const sunIcon = document.getElementById('theme-icon-sun');
+            if (moonIcon && sunIcon) {
+                moonIcon.style.display = this.theme === 'dark' ? 'block' : 'none';
+                sunIcon.style.display = this.theme === 'light' ? 'block' : 'none';
+            }
+        }
+        toggle() { this.theme = this.theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('mynd-theme', this.theme); this.apply(); bus.emit('theme:changed', { theme: this.theme }); }
+    }
+    const themeManager = new ThemeManager();
+
+    // Audio
+    class AudioEngine {
+        constructor() { this.enabled = false; this.ctx = null; }
+        async init() { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.enabled = true; } catch (e) {} }
+        playTone(freq = 440, dur = 0.1, type = 'sine', vol = 0.03) { if (!this.enabled || !this.ctx) return; try { const o = this.ctx.createOscillator(); const g = this.ctx.createGain(); o.type = type; o.frequency.setValueAtTime(freq, this.ctx.currentTime); g.gain.setValueAtTime(vol, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur); o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + dur); } catch (e) {} }
+        select() { this.playTone(600, 0.08, 'sine', 0.02); }
+        expand() { this.playTone(400, 0.1, 'sine', 0.02); setTimeout(() => this.playTone(500, 0.08, 'sine', 0.015), 60); }
+        collapse() { this.playTone(500, 0.08, 'sine', 0.02); setTimeout(() => this.playTone(400, 0.1, 'sine', 0.015), 60); }
+        add() { this.playTone(700, 0.1, 'sine', 0.02); }
+        error() { this.playTone(200, 0.15, 'triangle', 0.02); }
+        navigate() { this.playTone(800, 0.05, 'sine', 0.01); }
+        dive() { this.playTone(300, 0.15, 'sine', 0.025); setTimeout(() => this.playTone(400, 0.12, 'sine', 0.02), 100); setTimeout(() => this.playTone(500, 0.1, 'sine', 0.015), 180); }
+        surface() { this.playTone(500, 0.1, 'sine', 0.02); setTimeout(() => this.playTone(400, 0.12, 'sine', 0.018), 80); setTimeout(() => this.playTone(300, 0.15, 'sine', 0.015), 150); }
+    }
+    const audio = new AudioEngine();
+
+    // UI Controller
+    class UIController {
+        constructor() {
+            this.els = { loading: document.getElementById('loading'), infoPanel: document.getElementById('info-panel'),
+                nodeTitle: document.getElementById('node-title'), nodeDetails: document.getElementById('node-details'),
+                nodeMeta: document.getElementById('node-meta'), panelColorDot: document.getElementById('panel-color-dot'),
+                breadcrumb: document.getElementById('breadcrumb'), breadcrumbPath: document.getElementById('breadcrumb-path'),
+                searchInput: document.getElementById('search-input'), searchResults: document.getElementById('search-results'),
+                modal: document.getElementById('node-modal'), modalTitle: document.getElementById('modal-title'),
+                nameInput: document.getElementById('node-name-input'), descInput: document.getElementById('node-desc-input'),
+                toastContainer: document.getElementById('toast-container'), helpPanel: document.getElementById('help-panel'),
+                quickCapture: document.getElementById('quick-capture'), quickCaptureInput: document.getElementById('quick-capture-input'),
+                importInput: document.getElementById('import-input') };
+            this.modalMode = 'add'; this.modalParentId = null; this.modalEditId = null; this.selectedColor = '#EF8354'; this.searchResultIndex = -1;
+            this.bindEvents();
+        }
+        bindEvents() {
+            document.getElementById('close-btn').addEventListener('click', () => bus.emit('ui:deselect'));
+            document.getElementById('reset-view-btn').addEventListener('click', () => bus.emit('camera:reset'));
+            document.getElementById('expand-all-btn').addEventListener('click', () => bus.emit('nodes:expandAll'));
+            document.getElementById('collapse-all-btn').addEventListener('click', () => bus.emit('nodes:collapseAll'));
+            document.getElementById('add-root-btn').addEventListener('click', () => { const ctx = window.getCurrentContext ? window.getCurrentContext() : store.data.id; this.openModal('add', ctx); });
+            document.getElementById('export-btn').addEventListener('click', () => this.exportMap());
+            document.getElementById('help-btn').addEventListener('click', () => this.toggleHelp());
+            document.getElementById('theme-toggle').addEventListener('click', () => themeManager.toggle());
+            document.getElementById('undo-btn').addEventListener('click', () => this.performUndo());
+            document.getElementById('import-btn').addEventListener('click', () => this.els.importInput.click());
+            this.els.importInput.addEventListener('change', (e) => { const f = e.target.files[0]; if (f) { const r = new FileReader(); r.onload = (ev) => { if (store.importJSON(ev.target.result)) this.toast('Map imported!', 'success'); else this.toast('Import failed', 'error'); }; r.readAsText(f); } e.target.value = ''; });
+            document.getElementById('modal-cancel').addEventListener('click', () => this.closeModal());
+            document.getElementById('modal-submit').addEventListener('click', () => this.submitModal());
+            this.els.modal.addEventListener('click', (e) => { if (e.target === this.els.modal) this.closeModal(); });
+            document.querySelectorAll('.color-option').forEach(opt => { opt.addEventListener('click', () => { document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected')); opt.classList.add('selected'); this.selectedColor = opt.dataset.color; }); });
+            this.els.searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
+            this.els.searchInput.addEventListener('keydown', (e) => this.handleSearchKeydown(e));
+            document.querySelector('.search-icon').addEventListener('click', () => this.expandSearch());
+            document.querySelector('.search-close').addEventListener('click', () => this.collapseSearch());
+            this.els.searchInput.addEventListener('blur', (e) => { if (!e.relatedTarget?.closest('#search-container') && !this.els.searchInput.value) setTimeout(() => this.collapseSearch(), 150); });
+            document.addEventListener('click', (e) => { if (!e.target.closest('#search-container')) { this.els.searchResults.classList.remove('active'); this.collapseSearch(); } });
+            document.getElementById('quick-capture-submit').addEventListener('click', () => this.submitQuickCapture());
+            this.els.quickCaptureInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.submitQuickCapture(); if (e.key === 'Escape') this.toggleQuickCapture(false); });
+            document.addEventListener('keydown', (e) => this.handleKeyboard(e));
+            this.els.nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.submitModal(); });
+        }
+        handleKeyboard(e) {
+            if (e.target.matches('input, textarea')) { if (e.key === 'Escape') { e.target.blur(); this.closeModal(); this.toggleQuickCapture(false); } return; }
+            switch (e.key) {
+                case 'Escape': bus.emit('ui:surface'); this.closeModal(); this.toggleQuickCapture(false); break;
+                case 'z': if (e.metaKey || e.ctrlKey) { e.preventDefault(); this.performUndo(); } break;
+                case 'k': if (e.metaKey || e.ctrlKey) { e.preventDefault(); this.expandSearch(); } break;
+                case 'q': if (!e.metaKey && !e.ctrlKey) { e.preventDefault(); this.toggleQuickCapture(); } break;
+                case 'n': if (!e.metaKey && !e.ctrlKey) { const ctx = window.getCurrentContext ? window.getCurrentContext() : store.data.id; this.openModal('add', store.selectedNodeId || ctx); } break;
+                case 'd': if (!e.metaKey && !e.ctrlKey) themeManager.toggle(); break;
+                case 'Delete': case 'Backspace': if (store.selectedNodeId && store.selectedNodeId !== store.data.id) this.confirmDelete(store.selectedNodeId); break;
+                case 'ArrowUp': e.preventDefault(); bus.emit('keyboard:navigate', { direction: 'up' }); break;
+                case 'ArrowDown': e.preventDefault(); bus.emit('keyboard:navigate', { direction: 'down' }); break;
+                case 'ArrowLeft': e.preventDefault(); bus.emit('keyboard:navigate', { direction: 'left' }); break;
+                case 'ArrowRight': e.preventDefault(); bus.emit('keyboard:navigate', { direction: 'right' }); break;
+                case 'Enter': if (store.selectedNodeId) bus.emit('node:tryDive', { id: store.selectedNodeId }); break;
+            }
+        }
+        toggleQuickCapture(force) { const active = force !== undefined ? force : !this.els.quickCapture.classList.contains('active'); if (active) { this.els.quickCapture.classList.add('active'); this.els.infoPanel.classList.remove('active'); setTimeout(() => this.els.quickCaptureInput.focus(), 100); } else { this.els.quickCapture.classList.remove('active'); this.els.quickCaptureInput.value = ''; } }
+        submitQuickCapture() { const v = this.els.quickCaptureInput.value.trim(); if (!v) return; const ctx = window.getCurrentContext ? window.getCurrentContext() : store.data.id; const pid = store.selectedNodeId || ctx; const p = store.findNode(pid); const n = store.addNode(pid, { label: v, color: p?.color || '#EF8354', description: '' }); if (n) { this.toast(`Added "${v}"`, 'success'); audio.add(); this.els.quickCaptureInput.value = ''; } }
+        handleSearch(query) { if (!query.trim()) { this.els.searchResults.classList.remove('active'); return; } const results = store.searchNodes(query).slice(0, 8); this.searchResultIndex = -1; if (results.length === 0) { this.els.searchResults.innerHTML = '<div class="search-result" style="color: var(--text-muted)">No results</div>'; } else { this.els.searchResults.innerHTML = results.map((n, i) => { const path = store.getPath(n.id).map(x => x.label).join(' › '); return `<div class="search-result" data-id="${n.id}" data-index="${i}"><div class="search-result-dot" style="background: ${n.color}"></div><span class="search-result-label">${n.label}</span><span class="search-result-path">${path}</span></div>`; }).join(''); this.els.searchResults.querySelectorAll('.search-result[data-id]').forEach(el => { el.addEventListener('click', () => { bus.emit('node:focus', { id: el.dataset.id }); this.els.searchResults.classList.remove('active'); this.els.searchInput.value = ''; this.collapseSearch(); }); }); } this.els.searchResults.classList.add('active'); }
+        expandSearch() { document.querySelector('.search-wrapper').classList.add('expanded'); setTimeout(() => this.els.searchInput.focus(), 100); }
+        collapseSearch() { const wrapper = document.querySelector('.search-wrapper'); if (wrapper) { wrapper.classList.remove('expanded'); this.els.searchResults.classList.remove('active'); this.els.searchInput.value = ''; } }
+        handleSearchKeydown(e) { const results = this.els.searchResults.querySelectorAll('.search-result[data-id]'); if (e.key === 'ArrowDown') { e.preventDefault(); this.searchResultIndex = Math.min(this.searchResultIndex + 1, results.length - 1); this.updateSearchSelection(results); } else if (e.key === 'ArrowUp') { e.preventDefault(); this.searchResultIndex = Math.max(this.searchResultIndex - 1, 0); this.updateSearchSelection(results); } else if (e.key === 'Enter' && this.searchResultIndex >= 0) { e.preventDefault(); const sel = results[this.searchResultIndex]; if (sel) { bus.emit('node:focus', { id: sel.dataset.id }); this.els.searchResults.classList.remove('active'); this.els.searchInput.value = ''; this.collapseSearch(); } } else if (e.key === 'Escape') { this.collapseSearch(); this.els.searchInput.blur(); } }
+        updateSearchSelection(results) { results.forEach((el, i) => el.classList.toggle('selected', i === this.searchResultIndex)); }
+        hideLoading() { this.els.loading.classList.add('hidden'); setTimeout(() => this.els.loading.remove(), 500); }
+        showNodeInfo(nodeData) { store.selectedNodeId = nodeData.id; this.toggleQuickCapture(false); this.els.nodeTitle.textContent = nodeData.label; this.els.panelColorDot.style.background = nodeData.color; let details = nodeData.description ? `<p>${this.escapeHTML(nodeData.description)}</p>` : ''; const cc = nodeData.children?.length || 0; if (!details && cc > 0) details = `<p>${cc} child node${cc > 1 ? 's' : ''}</p>`; this.els.nodeDetails.innerHTML = details; this.els.nodeMeta.innerHTML = `<span class="meta-tag">${cc} nodes</span>`; const pa = document.querySelector('.panel-actions'); if (cc > 0) { pa.innerHTML = `<button class="action-btn secondary" id="edit-node-btn">Edit</button><button class="action-btn secondary" id="dive-node-btn" style="background: var(--coral); color: white; border: none;">↓ Dive</button><button class="action-btn primary" id="add-node-btn">+ Add</button>`; document.getElementById('dive-node-btn').addEventListener('click', () => bus.emit('node:tryDive', { id: nodeData.id })); } else { pa.innerHTML = `<button class="action-btn secondary" id="edit-node-btn">Edit</button><button class="action-btn primary" id="add-node-btn">+ Add</button>`; } document.getElementById('add-node-btn').addEventListener('click', () => { if (store.selectedNodeId) this.openModal('add', store.selectedNodeId); }); document.getElementById('edit-node-btn').addEventListener('click', () => { if (store.selectedNodeId) this.openModal('edit', store.selectedNodeId); }); this.els.infoPanel.classList.add('active'); this.updateBreadcrumb(nodeData.id); }
+        hideNodeInfo() { store.selectedNodeId = null; this.els.infoPanel.classList.remove('active'); this.els.breadcrumb.classList.remove('active'); }
+        updateBreadcrumb(nodeId) { const path = store.getPath(nodeId); if (path.length === 0) { this.els.breadcrumb.classList.remove('active'); return; } this.els.breadcrumbPath.innerHTML = path.map((n, i) => { const isLast = i === path.length - 1; return `<span class="breadcrumb-item ${isLast ? 'current' : ''}">${n.label}</span>` + (isLast ? '' : '<span class="breadcrumb-separator">›</span>'); }).join(''); this.els.breadcrumb.classList.add('active'); }
+        openModal(mode, targetId) { this.modalMode = mode; if (mode === 'add') { this.modalParentId = targetId; this.modalEditId = null; this.els.modalTitle.textContent = 'Add Node'; document.getElementById('modal-submit').textContent = 'Add Node'; this.els.nameInput.value = ''; this.els.descInput.value = ''; const p = store.findNode(targetId); if (p) { this.selectedColor = p.color; document.querySelectorAll('.color-option').forEach(opt => opt.classList.toggle('selected', opt.dataset.color === p.color)); } } else { this.modalEditId = targetId; this.modalParentId = null; const n = store.findNode(targetId); if (!n) return; this.els.modalTitle.textContent = 'Edit Node'; document.getElementById('modal-submit').textContent = 'Save Changes'; this.els.nameInput.value = n.label; this.els.descInput.value = n.description || ''; this.selectedColor = n.color; document.querySelectorAll('.color-option').forEach(opt => opt.classList.toggle('selected', opt.dataset.color === n.color)); } this.els.modal.classList.add('active'); setTimeout(() => this.els.nameInput.focus(), 100); }
+        closeModal() { this.els.modal.classList.remove('active'); this.modalParentId = null; this.modalEditId = null; }
+        submitModal() { const name = this.els.nameInput.value.trim(); if (!name) { this.toast('Please enter a name', 'error'); audio.error(); return; } if (this.modalMode === 'add' && this.modalParentId) { const n = store.addNode(this.modalParentId, { label: name, color: this.selectedColor, description: this.els.descInput.value.trim() }); if (n) { this.toast(`Added "${name}"`, 'success'); audio.add(); } } else if (this.modalMode === 'edit' && this.modalEditId) { store.updateNode(this.modalEditId, { label: name, color: this.selectedColor, description: this.els.descInput.value.trim() }); this.toast(`Updated "${name}"`, 'success'); } this.closeModal(); }
+        confirmDelete(nodeId) { const n = store.findNode(nodeId); if (!n) return; if (confirm(`Delete "${n.label}" and all its children?`)) { if (store.deleteNode(nodeId)) { this.toast(`Deleted "${n.label}"`, 'success'); bus.emit('ui:deselect'); } } }
+        exportMap() { const json = store.exportJSON(); const blob = new Blob([json], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `mynd-mindmap-${Date.now()}.json`; a.click(); URL.revokeObjectURL(url); this.toast('Map exported!', 'success'); }
+        toggleHelp() { this.els.helpPanel.classList.toggle('active'); }
+        toast(message, type = 'success') { const t = document.createElement('div'); t.className = `toast ${type}`; t.innerHTML = `<span>${type === 'success' ? '✓' : '✕'}</span><span>${this.escapeHTML(message)}</span>`; this.els.toastContainer.appendChild(t); setTimeout(() => { t.classList.add('exiting'); setTimeout(() => t.remove(), 300); }, 3000); }
+        showToast(m, t = 'success') { this.toast(m, t); }
+        performUndo() { const r = store.undo(); if (r.success) this.toast(`Undid: ${r.actionName}`, 'success'); else this.toast('Nothing to undo', 'error'); this.updateUndoBtn(); }
+        updateUndoBtn() { document.getElementById('undo-btn').disabled = store.undoStack.length === 0; }
+        escapeHTML(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+    }
+
+    // 3D Scene with FLAT cartoon materials but ORIGINAL functions
+    async function initFlatScene() {
+        const scene = new THREE.Scene();
+        scene.background = null;
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 10, 28);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; controls.dampingFactor = 0.05; controls.minDistance = 8; controls.maxDistance = 60;
+        controls.enablePan = true; controls.panSpeed = 0.8; controls.maxPolarAngle = Math.PI * 0.85;
+        controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+
+        let shiftHeld = false;
+        window.addEventListener('keydown', (e) => { if (e.key === 'Shift' && !shiftHeld) { shiftHeld = true; controls.mouseButtons.LEFT = THREE.MOUSE.PAN; } if (e.key === 'Escape') { if (isNodeDragMode) cancelNodeDrag(); if (isMoveMode) toggleMoveMode(); if (radialMenuOpen) hideRadialMenu(); } });
+        window.addEventListener('keyup', (e) => { if (e.key === 'Shift') { shiftHeld = false; controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE; } });
+        // Reset shift state when window loses focus to prevent stuck pan mode
+        window.addEventListener('blur', () => { shiftHeld = false; controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE; });
+        window.addEventListener('focus', () => { shiftHeld = false; controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE; });
+        // Also check on mousedown to ensure we're in the right mode
+        renderer.domElement.addEventListener('mousedown', (e) => { 
+            if (!e.shiftKey && shiftHeld) { shiftHeld = false; controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE; }
+            if (e.shiftKey && !shiftHeld) { shiftHeld = true; controls.mouseButtons.LEFT = THREE.MOUSE.PAN; }
+        });
+
+        // Flat lighting (no shadows needed for flat style)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+        scene.add(ambientLight);
+        const mainLight = new THREE.DirectionalLight(0xFFFFFF, 0.3);
+        mainLight.position.set(15, 30, 15);
+        scene.add(mainLight);
+
+        const nodes = new Map();
+        const connections = [];
+        let selectedNode = null;
+        let keyboardFocusNode = null;
+        let currentContextId = store.data.id;
+        let isDiving = false;
+        const tunnelOverlay = document.getElementById('tunnel-overlay');
+        const depthIndicator = document.getElementById('depth-indicator');
+        const depthPath = document.getElementById('depth-path');
+
+        // FLAT MATERIAL with outline for cartoon look
+        function createFlatMaterial(color) { return new THREE.MeshBasicMaterial({ color: new THREE.Color(color) }); }
+        function createOutlineMesh(geometry, color, parent) {
+            const outlineMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(0.3), side: THREE.BackSide });
+            const outline = new THREE.Mesh(geometry.clone(), outlineMat);
+            outline.scale.multiplyScalar(1.08);
+            return outline;
+        }
+
+        // Spring physics (from original)
+        const SPRING = { stiffness: 0.10, damping: 0.80, scaleStiffness: 0.15, scaleDamping: 0.75 };
+        function updateSpring(mesh, dt) {
+            const s = mesh.userData.spring; if (!s) return;
+            const disp = new THREE.Vector3().subVectors(s.target, mesh.position);
+            const force = disp.multiplyScalar(SPRING.stiffness);
+            s.velocity.add(force); s.velocity.multiplyScalar(SPRING.damping); mesh.position.add(s.velocity);
+            if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.position.copy(mesh.position);
+            const scaleDiff = s.scaleTarget - s.currentScale;
+            s.scaleVelocity += scaleDiff * SPRING.scaleStiffness; s.scaleVelocity *= SPRING.scaleDamping; s.currentScale += s.scaleVelocity;
+            mesh.scale.setScalar(s.currentScale);
+            if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.scale.setScalar(s.currentScale * 1.08);
+            const rotX = s.rotTarget.x - mesh.rotation.x; const rotZ = s.rotTarget.z - mesh.rotation.z;
+            s.rotVelocity.x += rotX * 0.1; s.rotVelocity.z += rotZ * 0.1; s.rotVelocity.multiplyScalar(0.85);
+            mesh.rotation.x += s.rotVelocity.x; mesh.rotation.z += s.rotVelocity.z;
+        }
+        function bounceNode(mesh, intensity = 0.08) { if (!mesh.userData.spring) return; mesh.userData.spring.scaleTarget = 1 + intensity; setTimeout(() => { if (mesh.userData.spring) mesh.userData.spring.scaleTarget = 1; }, 100); }
+        function wobbleNode(mesh, intensity = 0.05) { if (!mesh.userData.spring) return; mesh.userData.spring.rotVelocity.x = (Math.random() - 0.5) * intensity; mesh.userData.spring.rotVelocity.z = (Math.random() - 0.5) * intensity; }
+        function impulseNode(mesh, dir, force = 0.5) { if (!mesh.userData.spring) return; mesh.userData.spring.velocity.add(dir.multiplyScalar(force)); }
+
+        // Calculate positions (ORIGINAL algorithm)
+        function calculatePositions(data, parentPos = [0, 0, 0], level = 0, parentAngle = 0, total = 1, index = 0) {
+            data.level = level;
+            if (level === 0) data.size = 2.0;
+            else if (level === 1) data.size = 0.9;
+            else if (level === 2) data.size = 0.55;
+            else data.size = Math.max(0.35, 0.55 - (level - 2) * 0.05);
+            let baseRadius = level === 0 ? 0 : (level === 1 ? 6.5 : 3.5);
+            let expandedRadius = level === 0 ? 0 : (level === 1 ? 9 : 5 + (level - 2) * 0.8);
+            if (level === 0) { data.position = [0, 0, 0]; data.basePosition = [0, 0, 0]; data.expandedPosition = [0, 0, 0]; data.branchAngle = 0; }
+            else if (level === 1) {
+                const angleStep = (Math.PI * 2) / Math.max(total, 1); const angle = angleStep * index;
+                const verticalOffset = (index - (total - 1) / 2) * 1.5 * 0.25;
+                data.basePosition = [Math.cos(angle) * baseRadius, verticalOffset, Math.sin(angle) * baseRadius];
+                data.expandedPosition = [Math.cos(angle) * expandedRadius, verticalOffset, Math.sin(angle) * expandedRadius];
+                data.position = [...data.basePosition]; data.branchAngle = angle;
+            } else {
+                // Dynamic spread angle based on number of children - more children = wider spread
+                const baseSpread = Math.PI * 0.55; // ~100 degrees for 2 children
+                const spreadAngle = Math.min(Math.PI * 0.9, baseSpread + (total - 2) * 0.15); // Increase spread for more children, max ~160 degrees
+                const halfSpread = spreadAngle / 2;
+                let childAngle = total === 1 ? parentAngle : parentAngle - halfSpread + (spreadAngle / (total - 1)) * index;
+                const verticalOffset = (index - (total - 1) / 2) * (0.8 + level * 0.15) * 0.2;
+                // Increase radius when there are more siblings
+                const adjustedBaseRadius = baseRadius + Math.max(0, (total - 3) * 0.3);
+                const adjustedExpandedRadius = expandedRadius + Math.max(0, (total - 3) * 0.3);
+                data.basePosition = [parentPos[0] + Math.cos(childAngle) * adjustedBaseRadius, parentPos[1] + verticalOffset, parentPos[2] + Math.sin(childAngle) * adjustedBaseRadius];
+                data.expandedPosition = [parentPos[0] + Math.cos(childAngle) * adjustedExpandedRadius, parentPos[1] + verticalOffset, parentPos[2] + Math.sin(childAngle) * adjustedExpandedRadius];
+                data.position = [...data.basePosition]; data.branchAngle = childAngle;
+            }
+            if (data.children) data.children.forEach((child, i) => { calculatePositions(child, data.basePosition, level + 1, data.branchAngle || 0, data.children.length, i); });
+            return data;
+        }
+
+        function createNodeMesh(data, parent = null) {
+            const geometry = new THREE.SphereGeometry(data.size, 32, 32);
+            const material = createFlatMaterial(data.color);
+            const mesh = new THREE.Mesh(geometry, material);
+            const isExpanded = store.expandedNodes.has(data.id);
+            const startPos = isExpanded && data.expandedPosition ? data.expandedPosition : data.position;
+            mesh.position.set(...startPos);
+            mesh.userData = { ...data, parent }; mesh.userData.isExpanded = isExpanded;
+            // Create outline for cartoon look
+            const outline = createOutlineMesh(geometry, data.color, mesh);
+            outline.position.copy(mesh.position); scene.add(outline); mesh.userData.outlineMesh = outline;
+            mesh.userData.spring = { velocity: new THREE.Vector3(0, 0, 0), target: new THREE.Vector3(...startPos), scaleVelocity: 0, scaleTarget: 1, currentScale: 1, rotVelocity: new THREE.Vector3(0, 0, 0), rotTarget: new THREE.Vector3(0, 0, 0), floatOffset: Math.random() * Math.PI * 2, floatSpeed: 0.2 + Math.random() * 0.15 };
+            scene.add(mesh);
+            const label = document.createElement('div'); label.className = 'node-label'; label.textContent = data.label;
+            label.style.display = data.level >= 2 ? 'none' : 'block'; document.body.appendChild(label); mesh.userData.labelDiv = label;
+            const parentIsExpanded = parent && store.expandedNodes.has(parent.id);
+            if (data.level >= 2 && !parentIsExpanded) { mesh.visible = false; outline.visible = false; mesh.userData.collapsed = true; }
+            else if (data.level >= 2 && parentIsExpanded) { mesh.visible = true; outline.visible = true; mesh.userData.collapsed = false; mesh.userData.labelDiv.style.display = 'block'; }
+            if (parent) { const connection = createConnection(parent, data); if (connection) { mesh.userData.connectionLine = connection; if (data.level >= 2 && !parentIsExpanded) connection.visible = false; } }
+            nodes.set(data.id, mesh);
+            if (data.children) data.children.forEach(child => createNodeMesh(child, data));
+            return mesh;
+        }
+
+        function createConnection(parentData, childData) {
+            if (!parentData || !parentData.position || !childData || !childData.position) return null;
+            const parentPos = new THREE.Vector3(...parentData.position);
+            const childPos = new THREE.Vector3(...childData.position);
+            const dir = new THREE.Vector3().subVectors(childPos, parentPos).normalize();
+            const parentEdge = parentPos.clone().add(dir.clone().multiplyScalar(parentData.size));
+            const childEdge = childPos.clone().sub(dir.clone().multiplyScalar(childData.size));
+            const points = [parentEdge, childEdge];
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ color: new THREE.Color(childData.color).multiplyScalar(0.6), transparent: true, opacity: 0.6 });
+            const line = new THREE.Line(geometry, material);
+            scene.add(line); connections.push(line);
+            return line;
+        }
+
+        function updateConnection(childMesh, parentMesh) {
+            if (!childMesh || !parentMesh) return;
+            if (!childMesh.userData || !childMesh.userData.connectionLine) return;
+            if (!parentMesh.position) return;
+            const parentPos = parentMesh.position.clone(); const childPos = childMesh.position.clone();
+            const dist = parentPos.distanceTo(childPos);
+            if (dist > 0.1) {
+                const dir = new THREE.Vector3().subVectors(childPos, parentPos).normalize();
+                const parentEdge = parentPos.clone().add(dir.clone().multiplyScalar(parentMesh.userData?.size || 0.5));
+                const childEdge = childPos.clone().sub(dir.clone().multiplyScalar(childMesh.userData?.size || 0.5));
+                const positions = childMesh.userData.connectionLine.geometry.attributes.position.array;
+                positions[0] = parentEdge.x; positions[1] = parentEdge.y; positions[2] = parentEdge.z;
+                positions[3] = childEdge.x; positions[4] = childEdge.y; positions[5] = childEdge.z;
+                childMesh.userData.connectionLine.geometry.attributes.position.needsUpdate = true;
+            }
+        }
+
+        // Toggle children (ORIGINAL animation logic)
+        function toggleChildren(parentMesh) {
+            const parentData = parentMesh.userData;
+            if (!parentData.children || parentData.children.length === 0) return;
+            parentMesh.userData.isExpanded = !parentMesh.userData.isExpanded;
+            if (parentMesh.userData.isExpanded) store.expandedNodes.add(parentData.id);
+            else store.expandedNodes.delete(parentData.id);
+            const childMeshes = parentData.children.map(c => nodes.get(c.id)).filter(Boolean);
+            bounceNode(parentMesh, 0.06);
+
+            if (parentMesh.userData.isExpanded) {
+                audio.expand();
+                
+                // Move parent outward along its branch when expanding (for all levels except root)
+                let parentTargetPos = parentMesh.position.clone();
+                if (parentData.level >= 1) {
+                    // Calculate expanded position by moving outward along branch angle
+                    const expandDistance = parentData.level === 1 ? 2.5 : 1.8;
+                    const branchAngle = parentData.branchAngle || Math.atan2(parentMesh.position.z, parentMesh.position.x);
+                    
+                    if (parentData.expandedPosition) {
+                        parentTargetPos = new THREE.Vector3(...parentData.expandedPosition);
+                    } else {
+                        // Calculate expanded position dynamically
+                        parentTargetPos = new THREE.Vector3(
+                            parentMesh.position.x + Math.cos(branchAngle) * expandDistance,
+                            parentMesh.position.y,
+                            parentMesh.position.z + Math.sin(branchAngle) * expandDistance
+                        );
+                        // Store it for later
+                        parentMesh.userData.expandedPosition = parentTargetPos.toArray();
+                        if (!parentMesh.userData.basePosition) {
+                            parentMesh.userData.basePosition = parentMesh.position.toArray();
+                        }
+                    }
+                    
+                    if (parentMesh.userData.spring) { 
+                        parentMesh.userData.spring.target.copy(parentTargetPos); 
+                        const outDir = parentTargetPos.clone().sub(parentMesh.position).normalize(); 
+                        impulseNode(parentMesh, outDir, 0.15); 
+                    }
+                    
+                    // Also update the connection line to grandparent
+                    if (parentMesh.userData.connectionLine && parentMesh.userData.parent) {
+                        const grandparentMesh = nodes.get(parentMesh.userData.parent.id);
+                        if (grandparentMesh) {
+                            updateConnection(parentMesh, grandparentMesh);
+                        }
+                    }
+                }
+                
+                // Calculate branchAngle from parent's actual/target position relative to center
+                // This ensures children spread outward from the root
+                let parentAngle = parentData.branchAngle;
+                if (parentAngle === undefined || parentAngle === null) {
+                    // Calculate angle from center to parent position
+                    parentAngle = Math.atan2(parentTargetPos.z, parentTargetPos.x);
+                }
+                
+                setTimeout(() => {
+                    childMeshes.forEach((child, i) => {
+                        child.visible = true; 
+                        if (child.userData.outlineMesh) child.userData.outlineMesh.visible = true;
+                        child.userData.collapsed = false; 
+                        if (child.userData.labelDiv) child.userData.labelDiv.style.display = 'none';
+                        
+                        // Use target position for parent (where it's animating to)
+                        const parentPos = parentTargetPos.clone();
+                        
+                        // Check if this child has a custom position saved in the store
+                        const childNodeData = store.findNode(child.userData.id);
+                        let targetPos;
+                        
+                        if (childNodeData && childNodeData.customPosition) {
+                            // Use the saved custom position
+                            targetPos = new THREE.Vector3(
+                                childNodeData.customPosition.x,
+                                childNodeData.customPosition.y,
+                                childNodeData.customPosition.z
+                            );
+                            // Preserve the branch angle if it was set
+                            if (child.userData.branchAngle === undefined) {
+                                child.userData.branchAngle = Math.atan2(targetPos.z - parentPos.z, targetPos.x - parentPos.x);
+                            }
+                        } else {
+                            // Calculate child radius based on level and number of children
+                            const total = childMeshes.length;
+                            const baseChildRadius = 3.5 + Math.max(0, (child.userData.level - 2)) * 0.4;
+                            const childRadius = baseChildRadius + Math.max(0, (total - 3) * 0.3); // Increase radius for more children
+                            
+                            // Dynamic spread angle based on number of children
+                            const baseSpread = Math.PI * 0.55;
+                            const angleSpread = Math.min(Math.PI * 0.9, baseSpread + (total - 2) * 0.15);
+                            const halfSpread = angleSpread / 2; 
+                            
+                            // Calculate child angle spreading from parent's branch angle
+                            let childAngle;
+                            if (total === 1) {
+                                childAngle = parentAngle;
+                            } else {
+                                childAngle = parentAngle - halfSpread + (angleSpread / (total - 1)) * i;
+                            }
+                            
+                            // Store branchAngle on child for future expansions
+                            child.userData.branchAngle = childAngle;
+                            
+                            const verticalOffset = (i - (total - 1) / 2) * 0.6 * 0.2;
+                            targetPos = new THREE.Vector3(
+                                parentPos.x + Math.cos(childAngle) * childRadius, 
+                                parentPos.y + verticalOffset, 
+                                parentPos.z + Math.sin(childAngle) * childRadius
+                            );
+                        }
+                        
+                        // Start child at parent position
+                        child.position.copy(parentPos); 
+                        if (child.userData.outlineMesh) child.userData.outlineMesh.position.copy(parentPos);
+                        child.scale.set(0.1, 0.1, 0.1); 
+                        child.material.transparent = true; 
+                        child.material.opacity = 0;
+                        if (child.userData.connectionLine) child.userData.connectionLine.visible = false;
+                        
+                        if (child.userData.spring) { 
+                            child.userData.spring.target.copy(targetPos); 
+                            child.userData.spring.currentScale = 0.1; 
+                            child.userData.spring.scaleTarget = 1; 
+                            const outDir = targetPos.clone().sub(parentPos).normalize(); 
+                            child.userData.spring.velocity.copy(outDir.multiplyScalar(0.4)); 
+                        }
+                        
+                        const total = childMeshes.length;
+                        setTimeout(() => {
+                            const startTime = Date.now(); 
+                            const startPos = parentPos.clone();
+                            // Longer duration for more children - gives eyes time to follow
+                            const baseDuration = 800;
+                            const extraDuration = Math.min(total - 1, 6) * 50; // Add 50ms per child up to 6
+                            const duration = baseDuration + extraDuration;
+                            function animate() {
+                                const progress = Math.min((Date.now() - startTime) / duration, 1);
+                                const ease = progress < 0.7 ? 1.2 * (1 - Math.pow(1 - progress / 0.7, 3)) : 1 + 0.2 * Math.sin((progress - 0.7) / 0.3 * Math.PI);
+                                child.position.lerpVectors(startPos, targetPos, Math.min(ease, 1.1));
+                                if (child.userData.outlineMesh) child.userData.outlineMesh.position.copy(child.position);
+                                child.scale.setScalar(0.1 + 0.9 * Math.min(ease, 1));
+                                if (child.userData.outlineMesh) child.userData.outlineMesh.scale.setScalar((0.1 + 0.9 * Math.min(ease, 1)) * 1.08);
+                                child.material.opacity = Math.min(progress * 1.5, 1);
+                                if (child.userData.connectionLine && progress > 0.2) { 
+                                    child.userData.connectionLine.visible = true; 
+                                    updateConnection(child, parentMesh); 
+                                    child.userData.connectionLine.material.opacity = 0.6 * ((progress - 0.2) / 0.8); 
+                                }
+                                if (progress < 1) requestAnimationFrame(animate);
+                                else { 
+                                    if (child.userData.spring) { 
+                                        child.userData.spring.target.copy(targetPos); 
+                                        child.userData.spring.scaleTarget = 1; 
+                                        child.userData.spring.currentScale = 1; 
+                                    } 
+                                    // Store the final position as basePosition for future collapse
+                                    child.userData.basePosition = targetPos.toArray();
+                                    child.scale.set(1, 1, 1); 
+                                    if (child.userData.outlineMesh) child.userData.outlineMesh.scale.setScalar(1.08); 
+                                    child.material.opacity = 1; 
+                                    child.material.transparent = false; 
+                                    if (child.userData.labelDiv) child.userData.labelDiv.style.display = 'block'; 
+                                    if (child.userData.connectionLine) child.userData.connectionLine.material.opacity = 0.6; 
+                                    bounceNode(child, 0.05); 
+                                }
+                            }
+                            animate();
+                        }, i * 60);
+                    });
+                }, parentData.level === 1 ? 180 : 50);
+            } else {
+                audio.collapse();
+                
+                // First, recursively collapse all expanded descendants immediately
+                function hideAllDescendants(meshToCollapse) {
+                    if (!meshToCollapse || !meshToCollapse.userData.children) return;
+                    meshToCollapse.userData.children.forEach(childData => {
+                        const childMesh = nodes.get(childData.id);
+                        if (childMesh) {
+                            // Mark as collapsed and not expanded
+                            childMesh.userData.isExpanded = false;
+                            childMesh.userData.collapsed = true;
+                            store.expandedNodes.delete(childData.id);
+                            
+                            // Hide immediately (no animation for grandchildren+)
+                            childMesh.visible = false;
+                            if (childMesh.userData.outlineMesh) childMesh.userData.outlineMesh.visible = false;
+                            if (childMesh.userData.labelDiv) childMesh.userData.labelDiv.style.display = 'none';
+                            if (childMesh.userData.connectionLine) childMesh.userData.connectionLine.visible = false;
+                            
+                            // Recursively hide all descendants
+                            hideAllDescendants(childMesh);
+                        }
+                    });
+                }
+                
+                // Hide all grandchildren and beyond immediately
+                childMeshes.forEach(child => {
+                    if (child && child.userData.children) {
+                        child.userData.children.forEach(gcData => {
+                            const gcMesh = nodes.get(gcData.id);
+                            if (gcMesh) {
+                                gcMesh.visible = false;
+                                if (gcMesh.userData.outlineMesh) gcMesh.userData.outlineMesh.visible = false;
+                                gcMesh.userData.collapsed = true;
+                                gcMesh.userData.isExpanded = false;
+                                store.expandedNodes.delete(gcData.id);
+                                if (gcMesh.userData.labelDiv) gcMesh.userData.labelDiv.style.display = 'none';
+                                if (gcMesh.userData.connectionLine) gcMesh.userData.connectionLine.visible = false;
+                                hideAllDescendants(gcMesh);
+                            }
+                        });
+                    }
+                });
+                
+                // For all nodes (except root), move back to base position
+                if (parentData.level >= 1 && parentData.basePosition) { 
+                    const targetPos = new THREE.Vector3(...parentData.basePosition); 
+                    if (parentMesh.userData.spring) { 
+                        parentMesh.userData.spring.target.copy(targetPos); 
+                        const inDir = targetPos.clone().sub(parentMesh.position).normalize(); 
+                        impulseNode(parentMesh, inDir, 0.1); 
+                    }
+                    // Update connection line to parent
+                    if (parentMesh.userData.connectionLine && parentMesh.userData.parent) {
+                        const grandparentMesh = nodes.get(parentMesh.userData.parent.id);
+                        if (grandparentMesh) {
+                            updateConnection(parentMesh, grandparentMesh);
+                        }
+                    }
+                }
+                
+                // Animate direct children collapsing
+                const parentCollapseTarget = parentData.basePosition ? new THREE.Vector3(...parentData.basePosition) : parentMesh.position.clone();
+                childMeshes.forEach(child => {
+                    if (!child || !parentMesh) return;
+                    const startPos = child.position.clone(); 
+                    const targetPos = parentCollapseTarget.clone(); 
+                    const startTime = Date.now();
+                    const duration = 500; // Slower collapse
+                    const parentRef = parentMesh; // Capture reference for animation closure
+                    function animate() {
+                        if (!child || !parentRef) return; // Extra safety in animation loop
+                        const progress = Math.min((Date.now() - startTime) / duration, 1); const ease = progress * progress;
+                        child.position.lerpVectors(startPos, targetPos, ease);
+                        if (child.userData.outlineMesh) child.userData.outlineMesh.position.copy(child.position);
+                        child.scale.setScalar(1 - 0.9 * ease);
+                        if (child.userData.outlineMesh) child.userData.outlineMesh.scale.setScalar((1 - 0.9 * ease) * 1.08);
+                        child.material.transparent = true; child.material.opacity = 1 - progress;
+                        if (child.userData.connectionLine && parentRef.position) { updateConnection(child, parentRef); child.userData.connectionLine.material.opacity = 0.6 * (1 - progress); }
+                        if (progress < 1) requestAnimationFrame(animate);
+                        else { 
+                            child.visible = false; 
+                            if (child.userData.outlineMesh) child.userData.outlineMesh.visible = false; 
+                            child.userData.collapsed = true; 
+                            child.userData.isExpanded = false;
+                            store.expandedNodes.delete(child.userData.id);
+                            if (child.userData.labelDiv) child.userData.labelDiv.style.display = 'none'; 
+                            if (child.userData.connectionLine) child.userData.connectionLine.visible = false; 
+                        }
+                    }
+                    animate();
+                });
+            }
+        }
+
+        function selectNode(mesh, skipToggle = false) {
+            audio.select();
+            const previousSelectedNode = selectedNode;
+            if (selectedNode && selectedNode !== mesh) {
+                const selectedIsChild = mesh.userData.parent && mesh.userData.parent.id === selectedNode.userData.id;
+                if (!selectedIsChild && selectedNode.userData.isExpanded && selectedNode.userData.level > 0) toggleChildren(selectedNode);
+                if (selectedNode.userData.spring) selectedNode.userData.spring.scaleTarget = 1;
+            }
+            if (!skipToggle && mesh.userData.children && mesh.userData.children.length > 0 && mesh.userData.level > 0) toggleChildren(mesh);
+            if (selectedNode) selectedNode.scale.set(1, 1, 1);
+            selectedNode = mesh;
+            bounceNode(mesh, 0.1); wobbleNode(mesh, 0.08);
+            if (mesh.userData.spring) mesh.userData.spring.scaleTarget = 1.1;
+            keyboardFocusNode = mesh;
+            const relatedIds = new Set([mesh.userData.id]);
+            if (mesh.userData.children) mesh.userData.children.forEach(c => relatedIds.add(c.id));
+            if (mesh.userData.parent) relatedIds.add(mesh.userData.parent.id);
+            nodes.forEach((n, id) => { if (relatedIds.has(id) && n.visible) { n.material.opacity = 1; n.material.transparent = false; } else if (n.visible) { n.material.opacity = 0.2; n.material.transparent = true; } });
+            connections.forEach(c => { if (c.visible) c.material.opacity = 0.15; });
+            if (mesh.userData.children) { mesh.userData.children.forEach(childData => { const childMesh = nodes.get(childData.id); if (childMesh && childMesh.userData.connectionLine) childMesh.userData.connectionLine.material.opacity = 0.6; }); }
+            const nodePos = mesh.position.clone();
+            const isCenter = mesh.userData.level === 0;
+            const distance = isCenter ? 26 : (mesh.userData.level === 1 ? 16 : 12);
+            const mindToNode = new THREE.Vector3(nodePos.x, 0, nodePos.z).normalize();
+            const newCameraPos = new THREE.Vector3(nodePos.x + (mindToNode.length() > 0.1 ? mindToNode.x : 0) * distance, nodePos.y + (isCenter ? 8 : 5), nodePos.z + (mindToNode.length() > 0.1 ? mindToNode.z : 1) * distance);
+            const wasSwitchingNodes = previousSelectedNode && previousSelectedNode !== mesh;
+            if (wasSwitchingNodes) {
+                const isChildOfPrevious = mesh.userData.parent && previousSelectedNode.userData && mesh.userData.parent.id === previousSelectedNode.userData.id;
+                const isParentOfPrevious = previousSelectedNode.userData && previousSelectedNode.userData.parent && previousSelectedNode.userData.parent.id === mesh.userData.id;
+                if (isChildOfPrevious || isParentOfPrevious) animateCamera(camera.position.clone(), newCameraPos, controls.target.clone(), nodePos);
+                else animateCameraWithZoom(camera.position.clone(), newCameraPos, controls.target.clone(), nodePos);
+            } else { animateCamera(camera.position.clone(), newCameraPos, controls.target.clone(), nodePos); }
+            bus.emit('node:selected', { data: mesh.userData });
+        }
+
+        function deselectNode() {
+            if (selectedNode) { if (selectedNode.userData.spring) selectedNode.userData.spring.scaleTarget = 1; selectedNode.scale.set(1, 1, 1); if (selectedNode.userData.outlineMesh) selectedNode.userData.outlineMesh.scale.setScalar(1.08); if (selectedNode.userData.isExpanded && selectedNode.userData.level > 0) toggleChildren(selectedNode); selectedNode = null; }
+            keyboardFocusNode = nodes.get(store.data.id) || null;
+            nodes.forEach(n => { if (n.visible) { n.material.opacity = 1; n.material.transparent = false; if (n.userData.spring) n.userData.spring.scaleTarget = 1; } });
+            connections.forEach(c => { if (c.visible) c.material.opacity = 0.6; });
+            animateCamera(camera.position.clone(), new THREE.Vector3(0, 10, 28), controls.target.clone(), new THREE.Vector3(0, 0, 0));
+            bus.emit('node:deselected');
+        }
+
+        function animateCamera(fromPos, toPos, fromTarget, toTarget, duration = 900) {
+            const startTime = Date.now();
+            function animate() {
+                const progress = Math.min((Date.now() - startTime) / duration, 1);
+                const ease = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                camera.position.lerpVectors(fromPos, toPos, ease);
+                controls.target.lerpVectors(fromTarget, toTarget, ease);
+                controls.update();
+                if (progress < 1) requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        function animateCameraWithZoom(fromPos, toPos, fromTarget, toTarget, duration = 1400) {
+            const startTime = Date.now();
+            const nodeDistance = fromTarget.distanceTo(toTarget);
+            const arcHeight = Math.min(nodeDistance * 0.5, 12) + 4;
+            const arcPullBack = Math.min(nodeDistance * 0.3, 8) + 3;
+            const midTarget = new THREE.Vector3().lerpVectors(fromTarget, toTarget, 0.5);
+            const sceneCenter = new THREE.Vector3(0, 0, 0);
+            const pullDir = new THREE.Vector3().subVectors(midTarget, sceneCenter).normalize();
+            if (pullDir.length() < 0.1) pullDir.set(0, 0, 1);
+            function animate() {
+                const elapsed = Date.now() - startTime; const t = Math.min(elapsed / duration, 1);
+                const ease = 0.5 - 0.5 * Math.cos(t * Math.PI); const arc = Math.sin(t * Math.PI);
+                const currentPos = new THREE.Vector3().lerpVectors(fromPos, toPos, ease);
+                const currentTarget = new THREE.Vector3().lerpVectors(fromTarget, toTarget, ease);
+                currentPos.y += arc * arcHeight; currentPos.x += pullDir.x * arc * arcPullBack; currentPos.z += pullDir.z * arc * arcPullBack;
+                camera.position.copy(currentPos); controls.target.copy(currentTarget); controls.update();
+                if (t < 1) requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // Dive/Surface (ORIGINAL animations)
+        function updateDepthIndicator() {
+            const breadcrumb = document.getElementById('breadcrumb');
+            if (currentContextId === store.data.id) { depthIndicator.classList.remove('active'); return; }
+            breadcrumb.classList.remove('active');
+            const path = store.getPath(currentContextId);
+            depthPath.innerHTML = path.map((node, i) => { const isLast = i === path.length - 1; return `<span class="depth-path-item ${isLast ? 'current' : ''}" data-id="${node.id}">${node.label}</span>` + (isLast ? '' : '<span class="depth-path-separator">›</span>'); }).join('');
+            depthPath.querySelectorAll('.depth-path-item').forEach(item => { item.addEventListener('click', () => { if (item.dataset.id !== currentContextId) surfaceToNode(item.dataset.id); }); });
+            depthIndicator.classList.add('active');
+        }
+
+        function diveIntoNode(mesh) {
+            if (isDiving) return; if (!mesh.userData.children || mesh.userData.children.length === 0) return;
+            isDiving = true; audio.dive();
+            const targetNode = mesh.userData; const targetId = targetNode.id;
+            const nodePos = mesh.position.clone(); const cameraStartPos = camera.position.clone(); const startTarget = controls.target.clone();
+            const startTime = Date.now(); const duration = 800;
+            const dirToNode = nodePos.clone().sub(cameraStartPos).normalize();
+            function animateDive() {
+                const elapsed = Date.now() - startTime; const progress = Math.min(elapsed / duration, 1);
+                const ease = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                if (progress < 0.6) {
+                    const subProgress = progress / 0.6; const subEase = subProgress * subProgress;
+                    const approachTarget = nodePos.clone().add(dirToNode.clone().multiplyScalar(subEase * 5 - 2));
+                    camera.position.lerpVectors(cameraStartPos, approachTarget, subEase);
+                    controls.target.lerpVectors(startTarget, nodePos.clone().add(dirToNode.clone().multiplyScalar(subEase * 3)), subEase);
+                    const fadeProgress = Math.max(0, (subProgress - 0.3) / 0.7);
+                    nodes.forEach((n, id) => { if (id !== targetNode.id) { n.material.transparent = true; n.material.opacity = 1 - fadeProgress; if (n.userData.labelDiv) n.userData.labelDiv.style.opacity = String(1 - fadeProgress); } });
+                    connections.forEach(c => { c.material.opacity = 0.6 * (1 - fadeProgress); });
+                } else {
+                    const subProgress = (progress - 0.6) / 0.4; const subEase = 1 - Math.pow(1 - subProgress, 3);
+                    const emergeCamStart = nodePos.clone().add(new THREE.Vector3(0, 3, 5)); const finalCamPos = new THREE.Vector3(0, 10, 28);
+                    camera.position.lerpVectors(emergeCamStart, finalCamPos, subEase);
+                    controls.target.lerpVectors(nodePos, new THREE.Vector3(0, 0, 0), subEase);
+                }
+                controls.update();
+                if (progress < 1) requestAnimationFrame(animateDive);
+                else { currentContextId = targetId; rebuildSceneAtContext(targetId); isDiving = false; updateDepthIndicator(); bus.emit('node:dived', { id: targetId }); }
+            }
+            animateDive();
+        }
+
+        function surfaceFromNode() {
+            if (isDiving) return; if (currentContextId === store.data.id) return;
+            isDiving = true; audio.surface();
+            const parent = store.findParent(currentContextId); const targetId = parent ? parent.id : store.data.id;
+            const cameraStartPos = camera.position.clone(); const startTarget = controls.target.clone();
+            const startTime = Date.now(); const duration = 700;
+            nodes.forEach(n => { n.material.transparent = true; });
+            function animateSurface() {
+                const elapsed = Date.now() - startTime; const progress = Math.min(elapsed / duration, 1);
+                const ease = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                camera.position.lerpVectors(cameraStartPos, new THREE.Vector3(0, 10, 28), ease);
+                controls.target.lerpVectors(startTarget, new THREE.Vector3(0, 0, 0), ease);
+                if (progress < 0.5) { const fadeProgress = progress / 0.5; nodes.forEach(n => { n.material.opacity = 1 - fadeProgress * 0.8; }); }
+                controls.update();
+                if (progress < 1) requestAnimationFrame(animateSurface);
+                else { currentContextId = targetId; rebuildSceneAtContext(targetId); isDiving = false; updateDepthIndicator(); bus.emit('node:surfaced', { id: targetId }); }
+            }
+            animateSurface();
+        }
+
+        function surfaceToNode(targetId) {
+            if (isDiving) return; if (targetId === currentContextId) return;
+            isDiving = true; audio.surface();
+            tunnelOverlay.classList.remove('diving'); tunnelOverlay.classList.add('surfacing');
+            const startTime = Date.now(); const duration = 1050;
+            const cameraStartPos = camera.position.clone(); const startTarget = controls.target.clone(); const startFOV = camera.fov;
+            nodes.forEach(n => { n.material.transparent = true; });
+            function animateSurface() {
+                const elapsed = Date.now() - startTime; const progress = Math.min(elapsed / duration, 1);
+                if (progress < 0.3) { const subProgress = progress / 0.3; camera.position.lerpVectors(cameraStartPos, cameraStartPos.clone().add(new THREE.Vector3(0, 5, 10)), subProgress); camera.fov = startFOV + subProgress * 10; camera.updateProjectionMatrix(); nodes.forEach(n => { n.material.opacity = 1 - subProgress * 0.8; }); }
+                else { const subProgress = (progress - 0.3) / 0.7; const subEase = 1 - Math.pow(1 - subProgress, 2); const midPos = cameraStartPos.clone().add(new THREE.Vector3(0, 5, 10)); camera.position.lerpVectors(midPos, new THREE.Vector3(0, 10, 28), subEase); controls.target.lerpVectors(startTarget, new THREE.Vector3(0, 0, 0), subEase); camera.fov = startFOV + 10 - subEase * 10; camera.updateProjectionMatrix(); }
+                controls.update();
+                if (progress < 1) requestAnimationFrame(animateSurface);
+                else { camera.fov = startFOV; camera.updateProjectionMatrix(); currentContextId = targetId; rebuildSceneAtContext(targetId); isDiving = false; tunnelOverlay.classList.remove('surfacing'); updateDepthIndicator(); bus.emit('node:surfaced', { id: targetId }); }
+            }
+            animateSurface();
+        }
+
+        function rebuildSceneAtContext(contextId, skipAnimation = false) {
+            nodes.forEach(mesh => { scene.remove(mesh); if (mesh.userData.outlineMesh) { scene.remove(mesh.userData.outlineMesh); mesh.userData.outlineMesh.geometry.dispose(); mesh.userData.outlineMesh.material.dispose(); } mesh.userData.labelDiv?.remove(); mesh.geometry.dispose(); mesh.material.dispose(); });
+            connections.forEach(conn => { scene.remove(conn); conn.geometry.dispose(); conn.material.dispose(); });
+            const existingShell = scene.getObjectByName('contextShell'); if (existingShell) { scene.remove(existingShell); existingShell.geometry.dispose(); existingShell.material.dispose(); }
+            nodes.clear(); connections.length = 0; selectedNode = null; keyboardFocusNode = null;
+            const expandedIds = new Set(store.expandedNodes);
+            const contextNode = store.findNode(contextId); if (!contextNode) return;
+            if (contextId !== store.data.id) { const shellGeometry = new THREE.SphereGeometry(35, 64, 64); const shellMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(contextNode.color), transparent: true, opacity: 0.025, side: THREE.BackSide, depthWrite: false }); const shell = new THREE.Mesh(shellGeometry, shellMaterial); shell.name = 'contextShell'; scene.add(shell); }
+            const virtualRoot = JSON.parse(JSON.stringify(contextNode));
+            const processedData = calculatePositions(virtualRoot);
+            createNodeMesh(processedData);
+            expandedIds.forEach(nodeId => {
+                const mesh = nodes.get(nodeId);
+                if (mesh && mesh.userData.children && mesh.userData.children.length > 0) {
+                    mesh.userData.isExpanded = true; store.expandedNodes.add(nodeId);
+                    if (mesh.userData.expandedPosition && mesh.userData.level > 0) { mesh.position.set(...mesh.userData.expandedPosition); if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.position.copy(mesh.position); mesh.userData.spring.target.set(...mesh.userData.expandedPosition); if (mesh.userData.connectionLine && mesh.userData.parent) { const parentMesh = nodes.get(mesh.userData.parent.id); if (parentMesh) updateConnection(mesh, parentMesh); } }
+                    mesh.userData.children.forEach((childData, i) => {
+                        const childMesh = nodes.get(childData.id);
+                        if (childMesh) { childMesh.visible = true; if (childMesh.userData.outlineMesh) childMesh.userData.outlineMesh.visible = true; childMesh.userData.collapsed = false; if (childMesh.userData.labelDiv) childMesh.userData.labelDiv.style.display = 'block';
+                            if (mesh.userData.expandedPosition && mesh.userData.level > 0) { const parentPos = new THREE.Vector3(...mesh.userData.expandedPosition); const total = mesh.userData.children.length; const angleSpread = Math.PI * 0.55; const startAngle = -angleSpread / 2; const angleStep = total > 1 ? angleSpread / (total - 1) : 0; const angle = startAngle + i * angleStep; const childRadius = 3.5 + (childMesh.userData.level - 2) * 0.4; const childX = parentPos.x + Math.sin(angle) * childRadius; const childZ = parentPos.z + Math.cos(angle) * childRadius; const childY = parentPos.y - 0.3; childMesh.position.set(childX, childY, childZ); if (childMesh.userData.outlineMesh) childMesh.userData.outlineMesh.position.copy(childMesh.position); childMesh.userData.spring.target.set(childX, childY, childZ); }
+                            if (childMesh.userData.connectionLine) { childMesh.userData.connectionLine.visible = true; updateConnection(childMesh, mesh); }
+                        }
+                    });
+                }
+            });
+            if (!skipAnimation) { const visibleNodes = Array.from(nodes.values()).filter(mesh => mesh.visible); visibleNodes.forEach((mesh, i) => { const targetScale = mesh.scale.x; mesh.scale.set(0.01, 0.01, 0.01); if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.scale.set(0.01, 0.01, 0.01); mesh.material.transparent = true; mesh.material.opacity = 0; setTimeout(() => { const startTime = Date.now(); const duration = 600; function animateAppear() { const progress = Math.min((Date.now() - startTime) / duration, 1); const ease = 1 - Math.pow(1 - progress, 3); mesh.scale.setScalar(0.01 + ease * (targetScale - 0.01)); if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.scale.setScalar((0.01 + ease * (targetScale - 0.01)) * 1.08); mesh.material.opacity = ease; if (progress < 1) requestAnimationFrame(animateAppear); else { mesh.material.transparent = false; mesh.material.opacity = 1; } } animateAppear(); }, i * 75); }); }
+            keyboardFocusNode = nodes.get(contextId);
+        }
+
+        function navigateKeyboard(direction) {
+            audio.navigate(); if (!keyboardFocusNode) keyboardFocusNode = nodes.get(store.data.id);
+            if (!keyboardFocusNode) return;
+            const currentData = keyboardFocusNode.userData; let nextNode = null;
+            switch (direction) {
+                case 'up': if (currentData.parent) nextNode = nodes.get(currentData.parent.id); break;
+                case 'down': if (currentData.children && currentData.children.length > 0) { const fc = nodes.get(currentData.children[0].id); if (fc && fc.visible) nextNode = fc; } break;
+                case 'left': case 'right': const siblings = store.getSiblings(currentData.id); if (siblings.length > 1) { const ci = siblings.findIndex(s => s.id === currentData.id); const ni = direction === 'left' ? (ci - 1 + siblings.length) % siblings.length : (ci + 1) % siblings.length; const ns = nodes.get(siblings[ni].id); if (ns && ns.visible) nextNode = ns; } break;
+            }
+            if (nextNode && nextNode !== keyboardFocusNode) { keyboardFocusNode = nextNode; selectNode(nextNode); }
+        }
+
+        function expandAll() { nodes.forEach(mesh => { if (mesh.userData.level === 1 && !mesh.userData.isExpanded) toggleChildren(mesh); }); }
+        function collapseAll() { nodes.forEach(mesh => { if (mesh.userData.level === 1 && mesh.userData.isExpanded) toggleChildren(mesh); }); }
+        function focusNode(id) { const mesh = nodes.get(id); if (!mesh) return; const path = store.getPath(id); path.slice(0, -1).forEach(ancestor => { const ancestorMesh = nodes.get(ancestor.id); if (ancestorMesh && !ancestorMesh.userData.isExpanded && ancestorMesh.userData.children?.length > 0) toggleChildren(ancestorMesh); }); setTimeout(() => selectNode(mesh), 450); }
+
+        // Raycasting & Mouse events
+        const raycaster = new THREE.Raycaster(); const labelRaycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let hoveredNode = null; let isDragging = false; let mouseDownPos = { x: 0, y: 0 }; let lastHoveredNode = null;
+        const radialMenu = document.getElementById('radial-menu'); const radialToggle = document.getElementById('radial-toggle');
+        const radialItems = document.querySelectorAll('.radial-item'); const radialHitArea = document.getElementById('radial-hit-area');
+        const radialNodeHitArea = document.getElementById('radial-node-hit-area');
+        let radialMenuNode = null; let radialMenuOpen = false; let isNodeDragMode = false; let nodeDragTarget = null; let nodeDragPlane = null;
+        let isMoveMode = false; let childOffsets = new Map(); // Store child positions relative to dragged parent
+        
+        function toggleMoveMode() {
+            isMoveMode = !isMoveMode;
+            const btn = document.getElementById('move-mode-btn');
+            btn.classList.toggle('active', isMoveMode);
+            renderer.domElement.style.cursor = isMoveMode ? 'grab' : 'default';
+            if (!isMoveMode && isNodeDragMode) finishNodeDrag();
+        }
+        
+        document.getElementById('move-mode-btn').addEventListener('click', toggleMoveMode);
+        let radialMenuHideTimeout = null; let radialAnimating = false;
+
+        function cancelNodeDrag() { 
+            if (!isNodeDragMode || !nodeDragTarget) return; 
+            isNodeDragMode = false; 
+            controls.enabled = true; // Re-enable orbit controls
+            renderer.domElement.classList.remove('drag-mode-active'); 
+            renderer.domElement.style.cursor = isMoveMode ? 'grab' : 'default';
+            nodeDragTarget.material.opacity = 1; 
+            nodeDragTarget.material.transparent = false; 
+            if (nodeDragTarget.userData.basePosition) { 
+                nodeDragTarget.position.set(...nodeDragTarget.userData.basePosition); 
+                if (nodeDragTarget.userData.outlineMesh) nodeDragTarget.userData.outlineMesh.position.copy(nodeDragTarget.position); 
+                if (nodeDragTarget.userData.spring) nodeDragTarget.userData.spring.target.copy(nodeDragTarget.position); 
+                const parentMesh = nodes.get(nodeDragTarget.userData.parent?.id);
+                if (parentMesh) updateConnection(nodeDragTarget, parentMesh); 
+            } 
+            childOffsets.clear();
+            if (store.undoStack.length > 0) { store.undoStack.pop(); bus.emit('undo:changed'); }
+            nodeDragTarget = null; 
+            nodeDragPlane = null; 
+        }
+
+        function onMouseMove(e) {
+            if (isNodeDragMode) { updateNodeDrag(e); return; }
+            const isOverRadialMenu = e.target.closest('#radial-menu');
+            if (isOverRadialMenu) { if (radialMenuHideTimeout) { clearTimeout(radialMenuHideTimeout); radialMenuHideTimeout = null; } return; }
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const visibleNodes = Array.from(nodes.values()).filter(n => n.visible);
+            const intersects = raycaster.intersectObjects(visibleNodes);
+            if (lastHoveredNode && lastHoveredNode !== selectedNode && lastHoveredNode !== hoveredNode) { if (lastHoveredNode.userData.spring) lastHoveredNode.userData.spring.scaleTarget = 1; }
+            if (intersects.length > 0) {
+                hoveredNode = intersects[0].object;
+                if (hoveredNode !== selectedNode && hoveredNode !== lastHoveredNode) { if (hoveredNode.userData.spring) { hoveredNode.userData.spring.scaleTarget = 1.05; wobbleNode(hoveredNode, 0.03); } }
+                lastHoveredNode = hoveredNode; 
+                renderer.domElement.style.cursor = isMoveMode ? 'grab' : 'pointer';
+                if (!isMoveMode) updateRadialMenuOnHover(hoveredNode);
+                if (radialMenuNode === hoveredNode && radialMenuHideTimeout) { clearTimeout(radialMenuHideTimeout); radialMenuHideTimeout = null; }
+            } else {
+                if (hoveredNode && hoveredNode !== selectedNode && hoveredNode.userData.spring) hoveredNode.userData.spring.scaleTarget = 1;
+                hoveredNode = null; lastHoveredNode = null; 
+                renderer.domElement.style.cursor = isMoveMode ? 'grab' : 'default';
+                if (!radialMenuHideTimeout) { radialMenuHideTimeout = setTimeout(() => { hideRadialMenu(); radialMenuHideTimeout = null; }, 150); }
+            }
+        }
+
+        function onMouseDown(e) { 
+            mouseDownPos = { x: e.clientX, y: e.clientY }; 
+            isDragging = false; 
+            if (!e.target.closest('#radial-menu') && radialMenuOpen) hideRadialMenu(); 
+            
+            // In move mode, start dragging on mousedown if clicking a node
+            if (isMoveMode && !isNodeDragMode && e.button === 0) {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const visibleNodes = Array.from(nodes.values()).filter(n => n.visible);
+                const intersects = raycaster.intersectObjects(visibleNodes);
+                if (intersects.length > 0) {
+                    startNodeDrag(intersects[0].object);
+                }
+            }
+        }
+        function onMouseMoveForDrag(e) { const delta = Math.abs(e.clientX - mouseDownPos.x) + Math.abs(e.clientY - mouseDownPos.y); if (delta > 5) isDragging = true; }
+        function onMouseUp(e) {
+            // In move mode, finish drag on mouseup
+            if (isMoveMode && isNodeDragMode) {
+                finishNodeDrag();
+            }
+        }
+        function onClick(e) { 
+            if (isNodeDragMode) { finishNodeDrag(); return; } 
+            if (isDragging) return; 
+            if (e.target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #depth-indicator, .modal-overlay, #radial-menu')) return; 
+            if (radialMenuOpen) { hideRadialMenu(); return; } 
+            if (isMoveMode) return; // Don't select nodes in move mode
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1; 
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1; 
+            raycaster.setFromCamera(mouse, camera); 
+            const visibleNodes = Array.from(nodes.values()).filter(n => n.visible); 
+            const intersects = raycaster.intersectObjects(visibleNodes); 
+            if (intersects.length > 0) selectNode(intersects[0].object); 
+            else deselectNode(); 
+        }
+        function onDoubleClick(e) { if (isNodeDragMode) return; if (e.target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #depth-indicator, .modal-overlay, #radial-menu')) return; mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1; raycaster.setFromCamera(mouse, camera); const visibleNodes = Array.from(nodes.values()).filter(n => n.visible); const intersects = raycaster.intersectObjects(visibleNodes); if (intersects.length > 0) { const mesh = intersects[0].object; if (mesh.userData.children && mesh.userData.children.length > 0) diveIntoNode(mesh); } }
+
+        let touchStart = { x: 0, y: 0 }; let isTouchDrag = false;
+        function onTouchStart(e) { if (e.touches.length === 1) { touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY }; isTouchDrag = false; } }
+        function onTouchMove(e) { if (e.touches.length === 1) { const delta = Math.abs(e.touches[0].clientX - touchStart.x) + Math.abs(e.touches[0].clientY - touchStart.y); if (delta > 10) isTouchDrag = true; } }
+        function onTouchEnd(e) { if (isTouchDrag || e.changedTouches.length !== 1) return; const touch = e.changedTouches[0]; mouse.x = (touch.clientX / window.innerWidth) * 2 - 1; mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1; raycaster.setFromCamera(mouse, camera); const visibleNodes = Array.from(nodes.values()).filter(n => n.visible); const intersects = raycaster.intersectObjects(visibleNodes); if (intersects.length > 0) selectNode(intersects[0].object); else deselectNode(); }
+
+        // Radial menu
+        function showRadialMenu(mesh, screenPos) { if (radialMenuHideTimeout) { clearTimeout(radialMenuHideTimeout); radialMenuHideTimeout = null; } radialMenuNode = mesh; const nodeWorldRadius = mesh.geometry.parameters.radius * mesh.scale.x; const dist = camera.position.distanceTo(mesh.position); const fov = camera.fov * (Math.PI / 180); const screenHeight = window.innerHeight; const nodeScreenRadius = (nodeWorldRadius / (2 * dist * Math.tan(fov / 2))) * screenHeight; radialMenu.style.left = screenPos.x + 'px'; radialMenu.style.top = screenPos.y + 'px'; const toggleOffset = Math.max(nodeScreenRadius + 20, 40); const buttonScale = Math.min(1.8, Math.max(1, nodeScreenRadius / 50)); radialToggle.style.left = toggleOffset + 'px'; radialToggle.style.top = '0px'; radialToggle.style.transform = `translate(-50%, -50%) scale(${buttonScale})`; const baseButtonSize = 26; const scaledButtonSize = baseButtonSize * buttonScale; const ringWidth = scaledButtonSize + 16; const outerRadius = nodeScreenRadius + ringWidth; radialNodeHitArea.style.width = outerRadius * 2 + 'px'; radialNodeHitArea.style.height = outerRadius * 2 + 'px'; radialNodeHitArea.style.left = '0px'; radialNodeHitArea.style.top = '0px'; radialNodeHitArea.style.borderWidth = ringWidth + 'px'; radialMenu.classList.add('visible'); const diveBtn = document.querySelector('.radial-item[data-action="dive"]'); if (diveBtn) diveBtn.style.display = mesh.userData.children?.length > 0 ? 'flex' : 'none'; const deleteBtn = document.querySelector('.radial-item[data-action="delete"]'); if (deleteBtn) deleteBtn.style.display = mesh.userData.level === 0 ? 'none' : 'flex'; }
+        function hideRadialMenu() { radialMenu.classList.remove('visible'); radialMenuOpen = false; radialAnimating = false; radialToggle.classList.remove('active'); radialToggle.style.transform = 'translate(-50%, -50%)'; radialHitArea.classList.remove('active'); radialNodeHitArea.classList.remove('active'); radialItems.forEach(item => { item.classList.remove('visible'); item.style.opacity = ''; item.style.transform = ''; }); radialMenuNode = null; }
+        function toggleRadialItems() {
+            radialMenuOpen = !radialMenuOpen; radialToggle.classList.toggle('active', radialMenuOpen); radialAnimating = true;
+            if (radialMenuOpen && radialMenuNode) {
+                const nodeWorldRadius = radialMenuNode.geometry.parameters.radius * radialMenuNode.scale.x; const dist = camera.position.distanceTo(radialMenuNode.position); const fov = camera.fov * (Math.PI / 180); const screenHeight = window.innerHeight; const nodeScreenRadius = (nodeWorldRadius / (2 * dist * Math.tan(fov / 2))) * screenHeight; const itemRadius = Math.max(nodeScreenRadius + 20, 40); const buttonScale = Math.min(1.8, Math.max(1, nodeScreenRadius / 50)); const baseButtonSize = 26; const scaledButtonSize = baseButtonSize * buttonScale; const minSpacing = scaledButtonSize + 8; const visibleItems = Array.from(radialItems).filter(item => item.style.display !== 'none'); const arcPerItem = minSpacing / itemRadius; const duration = 400; const startTime = Date.now(); const hitAreaRadius = itemRadius + scaledButtonSize + 10; radialHitArea.style.width = hitAreaRadius * 2 + 'px'; radialHitArea.style.height = hitAreaRadius + 'px'; radialHitArea.style.left = -hitAreaRadius + 'px'; radialHitArea.style.top = -hitAreaRadius + 'px'; radialHitArea.classList.add('active'); radialNodeHitArea.classList.add('active'); visibleItems.forEach(item => { item.style.left = itemRadius + 'px'; item.style.top = '0px'; item.classList.add('visible'); });
+                function animateExpand() { const elapsed = Date.now() - startTime; const progress = Math.min(elapsed / duration, 1); const currentDist = camera.position.distanceTo(radialMenuNode.position); const currentNodeScreenRadius = (nodeWorldRadius / (2 * currentDist * Math.tan(fov / 2))) * screenHeight; const currentItemRadius = Math.max(currentNodeScreenRadius + 20, 40); const currentButtonScale = Math.min(1.8, Math.max(1, currentNodeScreenRadius / 50)); const currentScaledButtonSize = baseButtonSize * currentButtonScale; const currentMinSpacing = currentScaledButtonSize + 8; const currentArcPerItem = currentMinSpacing / currentItemRadius; const ease = 1 - Math.pow(1 - progress, 3); visibleItems.forEach((item, i) => { const itemDelay = i * 0.12; const itemProgress = Math.max(0, Math.min(1, (ease - itemDelay) / (1 - itemDelay * 0.5))); const itemEase = 1 - Math.pow(1 - itemProgress, 2); const targetAngle = -(i + 1) * currentArcPerItem; const currentAngle = targetAngle * itemEase; const x = Math.cos(currentAngle) * currentItemRadius; const y = Math.sin(currentAngle) * currentItemRadius; const scale = (0.5 + 0.5 * itemEase) * currentButtonScale; item.style.left = x + 'px'; item.style.top = y + 'px'; item.style.transform = `translate(-50%, -50%) scale(${scale})`; item.style.opacity = itemEase; }); radialToggle.style.left = currentItemRadius + 'px'; radialToggle.style.transform = `translate(-50%, -50%) scale(${currentButtonScale})`; if (progress < 1) requestAnimationFrame(animateExpand); else { const finalDist = camera.position.distanceTo(radialMenuNode.position); const finalNodeScreenRadius = (nodeWorldRadius / (2 * finalDist * Math.tan(fov / 2))) * screenHeight; const finalButtonScale = Math.min(1.8, Math.max(1, finalNodeScreenRadius / 50)); visibleItems.forEach(item => { item.style.transform = `translate(-50%, -50%) scale(${finalButtonScale})`; item.style.opacity = '1'; }); radialAnimating = false; } }
+                animateExpand();
+            } else {
+                const visibleItems = Array.from(radialItems).filter(item => item.classList.contains('visible')); radialHitArea.classList.remove('active'); radialNodeHitArea.classList.remove('active'); if (!radialMenuNode || visibleItems.length === 0) { visibleItems.forEach(item => item.classList.remove('visible')); radialAnimating = false; return; } const nodeWorldRadius = radialMenuNode.geometry.parameters.radius * radialMenuNode.scale.x; const fov = camera.fov * (Math.PI / 180); const screenHeight = window.innerHeight; const duration = 250; const startTime = Date.now(); const startPositions = visibleItems.map(item => ({ x: parseFloat(item.style.left) || 0, y: parseFloat(item.style.top) || 0 }));
+                function animateCollapse() { const elapsed = Date.now() - startTime; const progress = Math.min(elapsed / duration, 1); const ease = progress * progress; const currentDist = camera.position.distanceTo(radialMenuNode.position); const currentNodeScreenRadius = (nodeWorldRadius / (2 * currentDist * Math.tan(fov / 2))) * screenHeight; const currentItemRadius = Math.max(currentNodeScreenRadius + 20, 40); const currentButtonScale = Math.min(1.8, Math.max(1, currentNodeScreenRadius / 50)); visibleItems.forEach((item, i) => { const start = startPositions[i]; const x = start.x + (currentItemRadius - start.x) * ease; const y = start.y + (0 - start.y) * ease; const scale = currentButtonScale * (1 - 0.5 * ease); item.style.left = x + 'px'; item.style.top = y + 'px'; item.style.transform = `translate(-50%, -50%) scale(${scale})`; item.style.opacity = 1 - ease; }); radialToggle.style.left = currentItemRadius + 'px'; if (progress < 1) requestAnimationFrame(animateCollapse); else { visibleItems.forEach(item => { item.classList.remove('visible'); item.style.opacity = ''; item.style.transform = ''; }); radialToggle.style.transform = 'translate(-50%, -50%)'; radialAnimating = false; } }
+                animateCollapse();
+            }
+        }
+
+        function startNodeDrag(mesh) { 
+            if (mesh.userData.level === 0) { app.showToast('Cannot move the root node', 'error'); return; } 
+            store.saveSnapshot('Move node position'); 
+            isNodeDragMode = true; 
+            nodeDragTarget = mesh; 
+            controls.enabled = false; // Disable orbit controls while dragging
+            renderer.domElement.classList.add('drag-mode-active'); 
+            renderer.domElement.style.cursor = 'grabbing';
+            mesh.material.opacity = 0.7; 
+            mesh.material.transparent = true; 
+            
+            // Store offsets for all visible descendants so they move together
+            childOffsets.clear();
+            function storeDescendantOffsets(parentMesh) {
+                if (!parentMesh.userData.children) return;
+                parentMesh.userData.children.forEach(childData => {
+                    const childMesh = nodes.get(childData.id);
+                    if (childMesh && childMesh.visible) {
+                        const offset = childMesh.position.clone().sub(mesh.position);
+                        childOffsets.set(childData.id, offset);
+                        storeDescendantOffsets(childMesh);
+                    }
+                });
+            }
+            if (mesh.userData.isExpanded) {
+                storeDescendantOffsets(mesh);
+            }
+            
+            const cameraDirection = new THREE.Vector3(); 
+            camera.getWorldDirection(cameraDirection); 
+            nodeDragPlane = new THREE.Plane(); 
+            nodeDragPlane.setFromNormalAndCoplanarPoint(cameraDirection, mesh.position); 
+        }
+        function updateNodeDrag(e) { 
+            if (!isNodeDragMode || !nodeDragTarget) return; 
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1; 
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1; 
+            raycaster.setFromCamera(mouse, camera); 
+            const intersection = new THREE.Vector3(); 
+            if (raycaster.ray.intersectPlane(nodeDragPlane, intersection)) { 
+                nodeDragTarget.position.copy(intersection); 
+                if (nodeDragTarget.userData.outlineMesh) nodeDragTarget.userData.outlineMesh.position.copy(intersection); 
+                if (nodeDragTarget.userData.spring) nodeDragTarget.userData.spring.target.copy(nodeDragTarget.position); 
+                const dragParentMesh = nodes.get(nodeDragTarget.userData.parent?.id);
+                if (dragParentMesh) updateConnection(nodeDragTarget, dragParentMesh); 
+                
+                // Move all descendants along with the parent
+                childOffsets.forEach((offset, childId) => {
+                    const childMesh = nodes.get(childId);
+                    if (childMesh && childMesh.visible) {
+                        const newChildPos = intersection.clone().add(offset);
+                        childMesh.position.copy(newChildPos);
+                        if (childMesh.userData.outlineMesh) childMesh.userData.outlineMesh.position.copy(newChildPos);
+                        if (childMesh.userData.spring) childMesh.userData.spring.target.copy(newChildPos);
+                        // Update connection to its parent
+                        const parentMesh = nodes.get(childMesh.userData.parent?.id);
+                        if (parentMesh) updateConnection(childMesh, parentMesh);
+                    }
+                });
+            } 
+        }
+        function finishNodeDrag() { 
+            if (!isNodeDragMode || !nodeDragTarget) return; 
+            isNodeDragMode = false; 
+            controls.enabled = true; // Re-enable orbit controls
+            renderer.domElement.classList.remove('drag-mode-active'); 
+            renderer.domElement.style.cursor = isMoveMode ? 'grab' : 'default';
+            nodeDragTarget.material.opacity = 1; 
+            nodeDragTarget.material.transparent = false; 
+            const nodeData = store.findNode(nodeDragTarget.userData.id); 
+            if (nodeData) { 
+                nodeData.customPosition = { x: nodeDragTarget.position.x, y: nodeDragTarget.position.y, z: nodeDragTarget.position.z }; 
+                store.save(); 
+            } 
+            nodeDragTarget.userData.basePosition = [nodeDragTarget.position.x, nodeDragTarget.position.y, nodeDragTarget.position.z]; 
+            nodeDragTarget.userData.expandedPosition = [nodeDragTarget.position.x, nodeDragTarget.position.y, nodeDragTarget.position.z]; 
+            
+            // Update all moved children's positions
+            childOffsets.forEach((offset, childId) => {
+                const childMesh = nodes.get(childId);
+                if (childMesh) {
+                    childMesh.userData.basePosition = childMesh.position.toArray();
+                    childMesh.userData.expandedPosition = childMesh.position.toArray();
+                }
+            });
+            childOffsets.clear();
+            
+            bounceNode(nodeDragTarget, 0.08); 
+            nodeDragTarget = null; 
+            nodeDragPlane = null; 
+        }
+
+        radialToggle.addEventListener('click', (e) => { e.stopPropagation(); toggleRadialItems(); });
+        radialToggle.addEventListener('mouseenter', () => { if (radialMenuHideTimeout) { clearTimeout(radialMenuHideTimeout); radialMenuHideTimeout = null; } if (!radialMenuOpen && !radialAnimating) toggleRadialItems(); });
+        radialMenu.addEventListener('mouseenter', () => { if (radialMenuHideTimeout) { clearTimeout(radialMenuHideTimeout); radialMenuHideTimeout = null; } });
+        radialMenu.addEventListener('mouseleave', () => { if (!radialMenuHideTimeout) { radialMenuHideTimeout = setTimeout(() => { if (radialMenuNode && hoveredNode === radialMenuNode) { radialMenuHideTimeout = null; return; } hideRadialMenu(); radialMenuHideTimeout = null; }, 200); } });
+        radialItems.forEach(item => { item.addEventListener('click', (e) => { e.stopPropagation(); e.preventDefault(); if (!radialMenuNode) return; const targetNode = radialMenuNode; const targetNodeId = targetNode.userData.id; const targetNodeLabel = targetNode.userData.label; const targetNodeLevel = targetNode.userData.level; const targetNodeChildren = targetNode.userData.children; const action = item.dataset.action; hideRadialMenu(); switch (action) { case 'add': store.selectedNodeId = targetNodeId; app.openModal('add', targetNodeId); break; case 'dive': if (targetNodeChildren?.length > 0) diveIntoNode(targetNode); break; case 'edit': store.selectedNodeId = targetNodeId; app.openModal('edit', targetNodeId); break; case 'move': startNodeDrag(targetNode); break; case 'delete': if (targetNodeLevel === 0 || targetNodeId === store.data.id) { app.showToast('Cannot delete root node', 'error'); return; } if (confirm(`Delete "${targetNodeLabel}" and all its children?`)) { if (store.deleteNode(targetNodeId)) { app.showToast(`Deleted "${targetNodeLabel}"`, 'success'); bus.emit('ui:deselect'); } } break; } }); });
+        function updateRadialMenuOnHover(mesh) { if (radialMenuOpen && radialMenuNode && radialMenuNode !== mesh) hideRadialMenu(); if (radialMenuOpen || radialAnimating) return; const pos = mesh.position.clone(); pos.project(camera); const screenX = (pos.x * 0.5 + 0.5) * window.innerWidth; const screenY = (-pos.y * 0.5 + 0.5) * window.innerHeight; showRadialMenu(mesh, { x: screenX, y: screenY }); }
+
+        // Event listeners
+        window.addEventListener('mousedown', onMouseDown);
+        window.addEventListener('mouseup', onMouseUp);
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mousemove', onMouseMoveForDrag);
+        window.addEventListener('click', onClick);
+        window.addEventListener('dblclick', onDoubleClick);
+        window.addEventListener('touchstart', onTouchStart, { passive: true });
+        window.addEventListener('touchmove', onTouchMove, { passive: true });
+        window.addEventListener('touchend', onTouchEnd);
+        renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
+        document.getElementById('depth-back-btn').addEventListener('click', () => surfaceFromNode());
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        function rebuildScene() {
+            const expandedIds = new Set(store.expandedNodes);
+            nodes.forEach(mesh => {
+                scene.remove(mesh);
+                if (mesh.userData.outlineMesh) { scene.remove(mesh.userData.outlineMesh); mesh.userData.outlineMesh.geometry.dispose(); mesh.userData.outlineMesh.material.dispose(); }
+                mesh.userData.labelDiv?.remove();
+                mesh.geometry.dispose();
+                mesh.material.dispose();
+            });
+            connections.forEach(conn => { scene.remove(conn); conn.geometry.dispose(); conn.material.dispose(); });
+            nodes.clear();
+            connections.length = 0;
+            selectedNode = null;
+            keyboardFocusNode = null;
+            const processedData = calculatePositions(JSON.parse(JSON.stringify(store.data)));
+            createNodeMesh(processedData);
+            expandedIds.forEach(nodeId => {
+                const mesh = nodes.get(nodeId);
+                if (mesh && mesh.userData.children && mesh.userData.children.length > 0) {
+                    mesh.userData.isExpanded = true;
+                    if (mesh.userData.expandedPosition && mesh.userData.level > 0) {
+                        mesh.position.set(...mesh.userData.expandedPosition);
+                        if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.position.copy(mesh.position);
+                        if (mesh.userData.connectionLine && mesh.userData.parent) {
+                            const parentMesh = nodes.get(mesh.userData.parent.id);
+                            if (parentMesh) updateConnection(mesh, parentMesh);
+                        }
+                    }
+                    mesh.userData.children.forEach((childData, i) => {
+                        const childMesh = nodes.get(childData.id);
+                        if (childMesh) {
+                            childMesh.visible = true;
+                            if (childMesh.userData.outlineMesh) childMesh.userData.outlineMesh.visible = true;
+                            childMesh.userData.collapsed = false;
+                            childMesh.userData.labelDiv.style.display = 'block';
+                            if (childMesh.userData.connectionLine) { childMesh.userData.connectionLine.visible = true; updateConnection(childMesh, mesh); }
+                        }
+                    });
+                }
+            });
+            keyboardFocusNode = nodes.get(store.data.id);
+        }
+        
+        // Event bus handlers
+        bus.on('camera:reset', () => { if (currentContextId !== store.data.id) surfaceToNode(store.data.id); else deselectNode(); });
+        bus.on('nodes:expandAll', expandAll);
+        bus.on('nodes:collapseAll', collapseAll);
+        bus.on('ui:deselect', deselectNode);
+        bus.on('ui:surface', () => { if (currentContextId !== store.data.id) surfaceFromNode(); else deselectNode(); });
+        bus.on('node:focus', ({ id }) => focusNode(id));
+        bus.on('node:added', ({ parent, node }) => {
+            const savedPositions = new Map();
+            const savedExpanded = new Map();
+            nodes.forEach((mesh, id) => { if (mesh.visible) { savedPositions.set(id, mesh.position.clone()); savedExpanded.set(id, mesh.userData.isExpanded); } });
+            store.expandedNodes.add(parent.id);
+            
+            // Get sibling IDs (other children of the same parent) to animate them
+            const siblingIds = new Set();
+            if (parent.children) {
+                parent.children.forEach(c => { if (c.id !== node.id) siblingIds.add(c.id); });
+            }
+            
+            rebuildSceneAtContext(currentContextId, true);
+            setTimeout(() => {
+                nodes.forEach((mesh, id) => {
+                    if (id === node.id) {
+                        // Animate the NEW node from parent to its position
+                        const parentMesh = nodes.get(parent.id);
+                        if (parentMesh && mesh.visible) {
+                            const targetPos = mesh.position.clone();
+                            mesh.position.copy(parentMesh.position);
+                            if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.position.copy(parentMesh.position);
+                            mesh.scale.set(0.01, 0.01, 0.01);
+                            if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.scale.set(0.01, 0.01, 0.01);
+                            mesh.material.transparent = true;
+                            mesh.material.opacity = 0;
+                            if (mesh.userData.connectionLine) mesh.userData.connectionLine.visible = false;
+                            mesh.userData.labelDiv.style.display = 'none';
+                            const startPos = parentMesh.position.clone();
+                            const startTime = Date.now();
+                            const duration = 800;
+                            function animateNew() {
+                                const progress = Math.min((Date.now() - startTime) / duration, 1);
+                                const ease = 1 - Math.pow(1 - progress, 3);
+                                mesh.position.lerpVectors(startPos, targetPos, ease);
+                                if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.position.copy(mesh.position);
+                                mesh.scale.setScalar(0.01 + ease * 0.99);
+                                if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.scale.setScalar((0.01 + ease * 0.99) * 1.08);
+                                mesh.material.opacity = ease;
+                                if (progress > 0.2 && mesh.userData.connectionLine) { mesh.userData.connectionLine.visible = true; updateConnection(mesh, parentMesh); }
+                                if (progress < 1) requestAnimationFrame(animateNew);
+                                else { mesh.material.transparent = false; mesh.material.opacity = 1; mesh.userData.labelDiv.style.display = 'block'; if (mesh.userData.spring) mesh.userData.spring.target.copy(targetPos); bounceNode(mesh, 0.08); selectNode(mesh); }
+                            }
+                            animateNew();
+                        }
+                    } else if (siblingIds.has(id)) {
+                        // Animate SIBLINGS from old position to new position (to make room)
+                        const oldPos = savedPositions.get(id);
+                        const newPos = mesh.position.clone();
+                        if (oldPos) {
+                            mesh.position.copy(oldPos);
+                            if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.position.copy(oldPos);
+                        }
+                        if (mesh.userData.spring) mesh.userData.spring.target.copy(newPos);
+                        mesh.userData.basePosition = newPos.toArray();
+                        if (savedExpanded.has(id)) mesh.userData.isExpanded = savedExpanded.get(id);
+                    } else if (savedPositions.has(id)) {
+                        // Keep OTHER nodes at their positions (non-siblings)
+                        const oldPos = savedPositions.get(id);
+                        const newPos = mesh.position.clone();
+                        mesh.position.copy(oldPos);
+                        if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.position.copy(oldPos);
+                        mesh.scale.set(1, 1, 1);
+                        if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.scale.setScalar(1.08);
+                        mesh.material.transparent = false;
+                        mesh.material.opacity = 1;
+                        if (mesh.userData.labelDiv) mesh.userData.labelDiv.style.display = 'block';
+                        if (mesh.userData.spring) mesh.userData.spring.target.copy(newPos);
+                        if (savedExpanded.has(id)) mesh.userData.isExpanded = savedExpanded.get(id);
+                    } else if (mesh.visible) {
+                        mesh.scale.set(1, 1, 1);
+                        if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.scale.setScalar(1.08);
+                        mesh.material.transparent = false;
+                        mesh.material.opacity = 1;
+                        if (mesh.userData.labelDiv) mesh.userData.labelDiv.style.display = 'block';
+                    }
+                });
+                audio.expand();
+            }, 50);
+        });
+        bus.on('node:deleted', () => rebuildSceneAtContext(currentContextId));
+        bus.on('node:moved', () => rebuildSceneAtContext(currentContextId));
+        bus.on('node:reordered', () => rebuildSceneAtContext(currentContextId));
+        bus.on('node:updated', ({ node }) => {
+            const mesh = nodes.get(node.id);
+            if (mesh) {
+                mesh.userData.label = node.label;
+                mesh.userData.description = node.description;
+                mesh.userData.color = node.color;
+                mesh.userData.labelDiv.textContent = node.label;
+                mesh.material.color = new THREE.Color(node.color);
+                if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.material.color = new THREE.Color(node.color).multiplyScalar(0.3);
+                if (selectedNode === mesh) bus.emit('node:selected', { data: mesh.userData });
+            }
+        });
+        bus.on('data:reset', () => { store.expandedNodes.clear(); currentContextId = store.data.id; rebuildSceneAtContext(store.data.id); updateDepthIndicator(); });
+        bus.on('data:imported', () => { store.expandedNodes.clear(); currentContextId = store.data.id; rebuildSceneAtContext(store.data.id); updateDepthIndicator(); });
+        bus.on('data:undone', () => { const contextNode = store.findNode(currentContextId); if (!contextNode) currentContextId = store.data.id; rebuildSceneAtContext(currentContextId); updateDepthIndicator(); });
+        bus.on('undo:changed', () => app.updateUndoBtn());
+        bus.on('keyboard:navigate', ({ direction }) => navigateKeyboard(direction));
+        bus.on('keyboard:select', () => { if (keyboardFocusNode) selectNode(keyboardFocusNode); });
+        bus.on('node:tryDive', ({ id }) => { const mesh = nodes.get(id); if (mesh && mesh.userData.children && mesh.userData.children.length > 0) diveIntoNode(mesh); });
+        
+        window.getCurrentContext = () => currentContextId;
+        
+        // Build initial scene
+        const processedData = calculatePositions(JSON.parse(JSON.stringify(store.data)));
+        createNodeMesh(processedData);
+        keyboardFocusNode = nodes.get(store.data.id);
+        
+        // Animation loop
+        const clock = new THREE.Clock();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+            const deltaTime = clock.getDelta();
+            
+            nodes.forEach(mesh => {
+                if (mesh.visible) {
+                    updateSpring(mesh, deltaTime);
+                    const spring = mesh.userData.spring;
+                    if (spring && mesh !== selectedNode) {
+                        const floatY = Math.sin(time * spring.floatSpeed + spring.floatOffset) * 0.08;
+                        const floatX = Math.cos(time * spring.floatSpeed * 0.7 + spring.floatOffset) * 0.03;
+                        mesh.position.y = spring.target.y + floatY;
+                        mesh.position.x = spring.target.x + floatX;
+                        if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.position.copy(mesh.position);
+                    }
+                    if (mesh.userData.connectionLine && mesh.userData.connectionLine.visible && mesh.userData.parent) {
+                        const parentMesh = nodes.get(mesh.userData.parent.id);
+                        if (parentMesh && parentMesh.position) updateConnection(mesh, parentMesh);
+                    }
+                }
+            });
+            
+            if (selectedNode) selectedNode.rotation.y += 0.003;
+            
+            // Update radial menu position
+            if (radialMenuNode && radialMenu.classList.contains('visible')) {
+                const pos = radialMenuNode.position.clone();
+                pos.project(camera);
+                const screenX = (pos.x * 0.5 + 0.5) * window.innerWidth;
+                const screenY = (-pos.y * 0.5 + 0.5) * window.innerHeight;
+                radialMenu.style.left = screenX + 'px';
+                radialMenu.style.top = screenY + 'px';
+            }
+            
+            // Update labels
+            const visibleNodeMeshes = Array.from(nodes.values()).filter(n => n.visible);
+            nodes.forEach(mesh => {
+                if (mesh.visible && mesh.userData.labelDiv) {
+                    const vector = mesh.position.clone().project(camera);
+                    const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                    const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
+                    const dist = camera.position.distanceTo(mesh.position);
+                    const dirToNode = mesh.position.clone().sub(camera.position).normalize();
+                    labelRaycaster.set(camera.position, dirToNode);
+                    const intersects = labelRaycaster.intersectObjects(visibleNodeMeshes);
+                    const isOccluded = intersects.length > 0 && intersects[0].object !== mesh;
+                    if (isOccluded) { mesh.userData.labelDiv.style.display = 'none'; }
+                    else {
+                        mesh.userData.labelDiv.style.display = 'block';
+                        const scale = Math.max(0.6, Math.min(1.1, 16 / dist));
+                        const opacity = Math.max(0.4, Math.min(1, 22 / dist));
+                        mesh.userData.labelDiv.style.left = x + 'px';
+                        mesh.userData.labelDiv.style.top = (y + 28) + 'px';
+                        mesh.userData.labelDiv.style.transform = `translate(-50%, 0) scale(${scale})`;
+                        mesh.userData.labelDiv.style.opacity = opacity;
+                    }
+                } else if (mesh.userData.labelDiv) { mesh.userData.labelDiv.style.display = 'none'; }
+            });
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+        return { scene, camera, renderer, nodes };
+    }
+
+    // Main
+    (async function main() {
+        const ui = new UIController();
+        app = ui;
+        document.addEventListener('click', () => audio.init(), { once: true });
+        document.addEventListener('touchstart', () => audio.init(), { once: true });
+        bus.on('node:selected', ({ data }) => ui.showNodeInfo(data));
+        bus.on('node:deselected', () => ui.hideNodeInfo());
+        try {
+            await initFlatScene();
+            ui.hideLoading();
+            ui.updateUndoBtn();
+        } catch (error) {
+            console.error('Initialization failed:', error);
+            document.getElementById('loading').innerHTML = `<div class="loader"><div class="loader-text" style="color: #EF8354;">Error</div><p style="color: var(--text-muted); font-size: 13px; margin-top: 16px;">${error.message}<br>Please refresh.</p></div>`;
+        }
+    })();
+    </script>
+</body>
+</html>
