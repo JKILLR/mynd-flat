@@ -2463,7 +2463,11 @@
     }
 
     // Voice AI System
-    const EMBEDDED_API_KEY = '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'; // Paste your API key here to share the app with voice enabled
+    const EMBEDDED_API_KEY = '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';
+    // Clear any old cached keys if we have an embedded one
+    if (EMBEDDED_API_KEY) {
+        localStorage.removeItem('mynd_anthropic_api_key');
+    }
     const voiceAI = {
         recognition: null,
         isRecording: false,
@@ -2630,7 +2634,7 @@ If the user's input is a task, idea, goal, or note, create an appropriate node. 
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-api-key': this.apiKey,
+                        'x-api-key': this.apiKey.trim(),
                         'anthropic-version': '2023-06-01',
                         'anthropic-dangerous-direct-browser-access': 'true'
                     },
@@ -2646,6 +2650,8 @@ If the user's input is a task, idea, goal, or note, create an appropriate node. 
                 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
+                    console.error('API Error:', response.status, errorData);
+                    console.error('Key used (first 20 chars):', this.apiKey.substring(0, 20) + '...');
                     throw new Error(errorData.error?.message || `API error: ${response.status}`);
                 }
                 
