@@ -688,7 +688,21 @@
         findParent(id, node = this.data, parent = null) { if (node.id === id) return parent; if (node.children) for (const c of node.children) { const f = this.findParent(id, c, node); if (f !== undefined) return f; } return undefined; }
         getNodeDepth(id, node = this.data, depth = 0) { if (node.id === id) return depth; if (node.children) for (const c of node.children) { const d = this.getNodeDepth(id, c, depth + 1); if (d !== -1) return d; } return -1; }
         getSiblings(id) { const p = this.findParent(id); if (!p || !p.children) return []; return p.children; }
-        getAutoColor(parentId) { const p = this.findNode(parentId); if (!p) return NODE_COLORS[0]; const depth = this.getNodeDepth(parentId) + 1; const siblingCount = p.children ? p.children.length : 0; const colorIndex = (depth + siblingCount) % NODE_COLORS.length; return NODE_COLORS[colorIndex]; }
+        getAutoColor(parentId) { 
+            const p = this.findNode(parentId); 
+            if (!p) return NODE_COLORS[0]; 
+            const parentColor = p.color;
+            const siblingCount = p.children ? p.children.length : 0;
+            // Start with sibling-based offset, avoid parent color
+            let colorIndex = siblingCount % NODE_COLORS.length;
+            let color = NODE_COLORS[colorIndex];
+            // If same as parent, shift by 1
+            if (color === parentColor) {
+                colorIndex = (colorIndex + 1) % NODE_COLORS.length;
+                color = NODE_COLORS[colorIndex];
+            }
+            return color;
+        }
         addNode(parentId, nodeData) { const p = this.findNode(parentId); if (!p) return null; this.saveSnapshot('Add node'); if (!p.children) p.children = []; const autoColor = this.getAutoColor(parentId); const n = { id: nodeData.id || `node-${Date.now()}`, label: nodeData.label, color: nodeData.color || autoColor, description: nodeData.description || '', url: nodeData.url || '', children: [] }; p.children.push(n); this.expandedNodes.add(parentId); this.save(); bus.emit('node:added', { parent: p, node: n }); return n; }
         updateNode(id, updates) { const n = this.findNode(id); if (!n) return null; this.saveSnapshot('Edit node'); Object.assign(n, updates); this.save(); bus.emit('node:updated', { node: n }); return n; }
         deleteNode(id) { if (id === this.data.id) return false; const p = this.findParent(id); if (!p || !p.children) return false; const i = p.children.findIndex(c => c.id === id); if (i === -1) return false; this.saveSnapshot('Delete node'); const d = p.children.splice(i, 1)[0]; this.save(); bus.emit('node:deleted', { parentId: p.id, node: d }); return true; }
@@ -965,7 +979,9 @@
                 const baseSpread = Math.PI * 0.65; // ~117 degrees for 2 children (increased from 0.55)
                 const spreadAngle = Math.min(Math.PI * 1.0, baseSpread + (total - 2) * 0.2); // Increase spread for more children, max 180 degrees
                 const halfSpread = spreadAngle / 2;
-                let childAngle = total === 1 ? parentAngle : parentAngle - halfSpread + (spreadAngle / (total - 1)) * index;
+                // Use outward angle from center to parent, not parent's incoming branch
+                const outwardAngle = Math.atan2(parentPos[2], parentPos[0]);
+                let childAngle = total === 1 ? outwardAngle : outwardAngle - halfSpread + (spreadAngle / (total - 1)) * index;
                 const verticalOffset = (index - (total - 1) / 2) * (0.8 + level * 0.15) * 0.2;
                 // Increase radius when there are more siblings - more aggressive scaling
                 const adjustedBaseRadius = baseRadius + Math.max(0, (total - 2) * 0.5);
@@ -1120,26 +1136,6 @@
                     }
                 }
                 
-                // Calculate branchAngle from parent's actual/target position relative to center
-                // This ensures children spread outward from the root
-                let parentAngle;
-                if (parentData.level === 1) {
-                    // For level 1 nodes, always calculate from their position relative to root (0,0,0)
-                    // This ensures children always expand outward even if the node was moved
-                    parentAngle = Math.atan2(parentTargetPos.z, parentTargetPos.x);
-                } else if (parentData.parent) {
-                    // For deeper nodes, calculate angle from grandparent to parent
-                    const grandparentMesh = nodes.get(parentData.parent.id);
-                    if (grandparentMesh) {
-                        const gpPos = grandparentMesh.position;
-                        parentAngle = Math.atan2(parentTargetPos.z - gpPos.z, parentTargetPos.x - gpPos.x);
-                    } else {
-                        parentAngle = parentData.branchAngle || Math.atan2(parentTargetPos.z, parentTargetPos.x);
-                    }
-                } else {
-                    parentAngle = parentData.branchAngle || Math.atan2(parentTargetPos.z, parentTargetPos.x);
-                }
-                
                 setTimeout(() => {
                     childMeshes.forEach((child, i) => {
                         child.visible = true; 
@@ -1176,12 +1172,16 @@
                             const angleSpread = Math.min(Math.PI * 1.0, baseSpread + (total - 2) * 0.2);
                             const halfSpread = angleSpread / 2; 
                             
-                            // Calculate child angle spreading from parent's branch angle
+                            // Use outward angle from center (0,0,0) to parent, not parent's incoming branch angle
+                            // This makes children spread AWAY from center, not continue in same direction
+                            const outwardAngle = Math.atan2(parentPos.z, parentPos.x);
+                            
+                            // Calculate child angle spreading from outward angle
                             let childAngle;
                             if (total === 1) {
-                                childAngle = parentAngle;
+                                childAngle = outwardAngle;
                             } else {
-                                childAngle = parentAngle - halfSpread + (angleSpread / (total - 1)) * i;
+                                childAngle = outwardAngle - halfSpread + (angleSpread / (total - 1)) * i;
                             }
                             
                             // Store branchAngle on child for future expansions
@@ -1662,7 +1662,7 @@
                 if (hoveredNode && hoveredNode !== selectedNode && hoveredNode.userData.spring) hoveredNode.userData.spring.scaleTarget = 1;
                 hoveredNode = null; lastHoveredNode = null; 
                 renderer.domElement.style.cursor = isMoveMode ? 'grab' : 'default';
-                if (!radialMenuHideTimeout) { radialMenuHideTimeout = setTimeout(() => { hideRadialMenu(); radialMenuHideTimeout = null; }, 150); }
+                if (!radialMenuHideTimeout) { radialMenuHideTimeout = setTimeout(() => { hideRadialMenu(); radialMenuHideTimeout = null; }, 250); }
             }
         }
 
@@ -1841,10 +1841,10 @@
             const isMobile = window.innerWidth <= 768;
             radialMenu.style.left = screenPos.x + 'px'; 
             radialMenu.style.top = screenPos.y + 'px'; 
-            // Toggle at same radius as items will be
-            const minRadius = isMobile ? 60 : 45;
-            const toggleOffset = Math.max(nodeScreenRadius + 30, minRadius); 
-            const buttonScale = isMobile ? 1.1 : Math.min(1.4, Math.max(1, nodeScreenRadius / 50)); 
+            // Toggle closer to node on desktop for easier hover access
+            const minRadius = isMobile ? 60 : 35;
+            const toggleOffset = isMobile ? Math.max(nodeScreenRadius + 30, minRadius) : Math.max(nodeScreenRadius + 15, minRadius); 
+            const buttonScale = isMobile ? 1.1 : Math.min(1.2, Math.max(0.9, nodeScreenRadius / 60)); 
             radialToggle.style.left = toggleOffset + 'px'; 
             radialToggle.style.top = '0px'; 
             radialToggle.style.transform = `translate(-50%, -50%) scale(${buttonScale})`; 
@@ -1875,10 +1875,10 @@
                 const screenHeight = window.innerHeight; 
                 const nodeScreenRadius = (nodeWorldRadius / (2 * dist * Math.tan(fov / 2))) * screenHeight; 
                 const isMobile = window.innerWidth <= 768;
-                // Items at same radius as toggle - ensure minimum radius for touch targets
-                const minRadius = isMobile ? 60 : 45;
-                const itemRadius = Math.max(nodeScreenRadius + 30, minRadius); 
-                const buttonScale = isMobile ? 1.1 : Math.min(1.4, Math.max(1, nodeScreenRadius / 50)); 
+                // Items at same radius as toggle - closer on desktop for easier access
+                const minRadius = isMobile ? 60 : 35;
+                const itemRadius = isMobile ? Math.max(nodeScreenRadius + 30, minRadius) : Math.max(nodeScreenRadius + 15, minRadius); 
+                const buttonScale = isMobile ? 1.1 : Math.min(1.2, Math.max(0.9, nodeScreenRadius / 60)); 
                 const baseButtonSize = isMobile ? 36 : 28; 
                 const scaledButtonSize = baseButtonSize * buttonScale; 
                 const visibleItems = Array.from(radialItems).filter(item => item.style.display !== 'none'); 
@@ -1901,8 +1901,8 @@
                     const progress = Math.min(elapsed / duration, 1); 
                     const currentDist = camera.position.distanceTo(radialMenuNode.position); 
                     const currentNodeScreenRadius = (nodeWorldRadius / (2 * currentDist * Math.tan(fov / 2))) * screenHeight; 
-                    const currentItemRadius = Math.max(currentNodeScreenRadius + 30, isMobile ? 60 : 45); 
-                    const currentButtonScale = isMobile ? 1.1 : Math.min(1.4, Math.max(1, currentNodeScreenRadius / 50)); 
+                    const currentItemRadius = isMobile ? Math.max(currentNodeScreenRadius + 30, 60) : Math.max(currentNodeScreenRadius + 15, 35); 
+                    const currentButtonScale = isMobile ? 1.1 : Math.min(1.2, Math.max(0.9, currentNodeScreenRadius / 60)); 
                     const ease = 1 - Math.pow(1 - progress, 3); 
                     visibleItems.forEach((item, i) => { 
                         const itemDelay = i * 0.06; 
@@ -1934,7 +1934,7 @@
                 animateExpand();
             } else {
                 const visibleItems = Array.from(radialItems).filter(item => item.classList.contains('visible')); radialHitArea.classList.remove('active'); radialNodeHitArea.classList.remove('active'); if (!radialMenuNode || visibleItems.length === 0) { visibleItems.forEach(item => item.classList.remove('visible')); radialAnimating = false; return; } const nodeWorldRadius = radialMenuNode.geometry.parameters.radius * radialMenuNode.scale.x; const fov = camera.fov * (Math.PI / 180); const screenHeight = window.innerHeight; const duration = 250; const startTime = Date.now(); const startPositions = visibleItems.map(item => ({ x: parseFloat(item.style.left) || 0, y: parseFloat(item.style.top) || 0 })); const isMobile = window.innerWidth <= 768;
-                function animateCollapse() { const elapsed = Date.now() - startTime; const progress = Math.min(elapsed / duration, 1); const ease = progress * progress; const currentDist = camera.position.distanceTo(radialMenuNode.position); const currentNodeScreenRadius = (nodeWorldRadius / (2 * currentDist * Math.tan(fov / 2))) * screenHeight; const currentItemRadius = Math.max(currentNodeScreenRadius + 30, isMobile ? 60 : 45); const currentButtonScale = isMobile ? 1.1 : Math.min(1.4, Math.max(1, currentNodeScreenRadius / 50)); visibleItems.forEach((item, i) => { const start = startPositions[i]; const x = start.x + (currentItemRadius - start.x) * ease; const y = start.y + (0 - start.y) * ease; const scale = currentButtonScale * (1 - 0.5 * ease); item.style.left = x + 'px'; item.style.top = y + 'px'; item.style.transform = `translate(-50%, -50%) scale(${scale})`; item.style.opacity = 1 - ease; }); radialToggle.style.left = currentItemRadius + 'px'; if (progress < 1) requestAnimationFrame(animateCollapse); else { visibleItems.forEach(item => { item.classList.remove('visible'); item.style.opacity = ''; item.style.transform = ''; }); radialToggle.style.transform = 'translate(-50%, -50%)'; radialAnimating = false; } }
+                function animateCollapse() { const elapsed = Date.now() - startTime; const progress = Math.min(elapsed / duration, 1); const ease = progress * progress; const currentDist = camera.position.distanceTo(radialMenuNode.position); const currentNodeScreenRadius = (nodeWorldRadius / (2 * currentDist * Math.tan(fov / 2))) * screenHeight; const currentItemRadius = isMobile ? Math.max(currentNodeScreenRadius + 30, 60) : Math.max(currentNodeScreenRadius + 15, 35); const currentButtonScale = isMobile ? 1.1 : Math.min(1.2, Math.max(0.9, currentNodeScreenRadius / 60)); visibleItems.forEach((item, i) => { const start = startPositions[i]; const x = start.x + (currentItemRadius - start.x) * ease; const y = start.y + (0 - start.y) * ease; const scale = currentButtonScale * (1 - 0.5 * ease); item.style.left = x + 'px'; item.style.top = y + 'px'; item.style.transform = `translate(-50%, -50%) scale(${scale})`; item.style.opacity = 1 - ease; }); radialToggle.style.left = currentItemRadius + 'px'; if (progress < 1) requestAnimationFrame(animateCollapse); else { visibleItems.forEach(item => { item.classList.remove('visible'); item.style.opacity = ''; item.style.transform = ''; }); radialToggle.style.transform = 'translate(-50%, -50%)'; radialAnimating = false; } }
                 animateCollapse();
             }
         }
@@ -2305,9 +2305,9 @@
                     const screenHeight = window.innerHeight;
                     const nodeScreenRadius = (nodeWorldRadius / (2 * dist * Math.tan(fov / 2))) * screenHeight;
                     const isMobile = window.innerWidth <= 768;
-                    const minRadius = isMobile ? 60 : 45;
-                    const itemRadius = Math.max(nodeScreenRadius + 30, minRadius);
-                    const buttonScale = isMobile ? 1.1 : Math.min(1.4, Math.max(1, nodeScreenRadius / 50));
+                    const minRadius = isMobile ? 60 : 35;
+                    const itemRadius = isMobile ? Math.max(nodeScreenRadius + 30, minRadius) : Math.max(nodeScreenRadius + 15, minRadius);
+                    const buttonScale = isMobile ? 1.1 : Math.min(1.2, Math.max(0.9, nodeScreenRadius / 60));
                     const spacingPerItem = Math.PI / 5.2;
                     const startAngle = -spacingPerItem;
                     
@@ -2344,18 +2344,20 @@
                     const x = (labelScreenPos.x * 0.5 + 0.5) * window.innerWidth;
                     const y = (labelScreenPos.y * -0.5 + 0.5) * window.innerHeight;
                     
-                    const dist = camera.position.distanceTo(mesh.position);
+                    const distToLabel = camera.position.distanceTo(labelWorldPos);
                     
-                    // Check if node center is behind another node
-                    const dirToNode = mesh.position.clone().sub(camera.position).normalize();
-                    labelRaycaster.set(camera.position, dirToNode);
+                    // Check if LABEL position is behind another node (not the node center)
+                    const dirToLabel = labelWorldPos.clone().sub(camera.position).normalize();
+                    labelRaycaster.set(camera.position, dirToLabel);
                     const intersects = labelRaycaster.intersectObjects(visibleNodeMeshes);
-                    const isOccluded = intersects.length > 0 && intersects[0].object !== mesh && intersects[0].distance < dist - nodeRadius;
+                    // Label is occluded if any node (including its own parent) blocks the view to the label position
+                    const isOccluded = intersects.length > 0 && intersects[0].distance < distToLabel - 0.5;
                     
                     if (isOccluded || labelScreenPos.z > 1) { 
                         mesh.userData.labelDiv.style.display = 'none'; 
                     } else {
                         mesh.userData.labelDiv.style.display = 'block';
+                        const dist = camera.position.distanceTo(mesh.position);
                         const scale = Math.max(0.7, Math.min(1.0, 18 / dist));
                         const opacity = Math.max(0.5, Math.min(1, 25 / dist));
                         // Use translate3d for GPU acceleration - position from top-left of viewport
