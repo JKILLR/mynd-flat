@@ -1685,6 +1685,7 @@
         
         // Voice AI button
         document.getElementById('voice-btn').addEventListener('click', () => {
+            console.log('Voice button clicked, isRecording:', voiceAI.isRecording, 'isProcessing:', voiceAI.isProcessing);
             if (voiceAI.isRecording || voiceAI.isProcessing) {
                 voiceAI.stop();
             } else {
@@ -1876,7 +1877,7 @@
             const touch = e.changedTouches[0];
             // Ignore touches on UI elements - include radial items explicitly
             const target = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (target && target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #undo-btn, #depth-indicator, .modal-overlay, .radial-item, .radial-toggle, #header, .node-label, button, input, textarea, a')) return;
+            if (target && target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #undo-btn, #depth-indicator, .modal-overlay, .radial-item, .radial-toggle, #header, .node-label, #voice-indicator, #voice-backdrop, #api-key-modal, button, input, textarea, a')) return;
             
             // In move mode, don't select nodes
             if (isMoveMode) return;
@@ -2522,27 +2523,30 @@
         },
         
         start() {
+            console.log('Voice start called, apiKey exists:', !!this.apiKey);
+            
             if (!this.apiKey) {
                 this.showSettings();
                 return;
             }
             
+            // Show UI immediately before anything else
+            this.isRecording = true;
+            this.updateUI('recording');
+            document.getElementById('voice-transcript').textContent = 'Say something...';
+            
             if (!this.recognition && !this.init()) {
                 app.showToast('Voice not supported in this browser', 'error');
+                this.stop();
                 return;
             }
             
             try {
-                document.getElementById('voice-transcript').textContent = 'Say something...';
-                // Show UI immediately - don't wait for onstart callback
-                this.isRecording = true;
-                this.updateUI('recording');
                 this.recognition.start();
                 haptic.medium();
             } catch (e) {
                 console.error('Failed to start recognition:', e);
-                this.isRecording = false;
-                this.updateUI('idle');
+                this.stop();
                 app.showToast('Failed to start voice recognition', 'error');
             }
         },
@@ -2557,6 +2561,7 @@
         },
         
         updateUI(state) {
+            console.log('updateUI called with state:', state);
             const voiceBtn = document.getElementById('voice-btn');
             const indicator = document.getElementById('voice-indicator');
             const backdrop = document.getElementById('voice-backdrop');
@@ -2564,6 +2569,8 @@
             const micIcon = document.getElementById('voice-icon-mic');
             const brainIcon = document.getElementById('voice-icon-brain');
             const status = document.getElementById('voice-status');
+            
+            console.log('Elements found:', { voiceBtn: !!voiceBtn, indicator: !!indicator, backdrop: !!backdrop });
             
             voiceBtn.classList.remove('recording', 'processing');
             indicator.classList.remove('active');
@@ -2578,6 +2585,7 @@
                 micIcon.style.display = 'block';
                 brainIcon.style.display = 'none';
                 status.textContent = 'Listening...';
+                console.log('Recording UI activated');
             } else if (state === 'processing') {
                 voiceBtn.classList.add('processing');
                 indicator.classList.add('active');
