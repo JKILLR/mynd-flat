@@ -170,10 +170,10 @@
         .breadcrumb-item { color: var(--text-secondary); }
         .breadcrumb-item.current { color: var(--coral); font-weight: 500; }
         .breadcrumb-separator { color: var(--text-muted); }
-        #info-panel { position: fixed; bottom: var(--space-6); left: 50%; transform: translateX(-50%); z-index: var(--z-ui);
+        #info-panel { position: fixed; inset: auto; bottom: var(--space-6); left: 50%; transform: translateX(-50%); z-index: var(--z-ui);
             width: min(620px, calc(100vw - 48px)); background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur));
             border: 1px solid var(--glass-border); border-radius: 20px; padding: var(--space-5) var(--space-6); padding-right: 60px;
-            display: none; box-shadow: var(--shadow-lg); position: relative; }
+            display: none; box-shadow: var(--shadow-lg); }
         #info-panel.active { display: flex; align-items: center; gap: var(--space-5); animation: panelSlide var(--duration-slow) var(--ease-out); }
         @keyframes panelSlide { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
         .panel-header { display: flex; align-items: center; gap: var(--space-3); }
@@ -262,11 +262,12 @@
         .radial-item:hover .tooltip { opacity: 1; }
         .drag-mode-active { cursor: grab !important; }
         .drag-mode-active:active { cursor: grabbing !important; }
-        .node-label { position: absolute; z-index: 100; font-family: var(--font-display); font-size: 11px; font-weight: 600;
+        .node-label { position: absolute; left: 0; top: 0; z-index: 100; font-family: var(--font-display); font-size: 11px; font-weight: 600;
             letter-spacing: 0.5px; color: var(--text-primary); pointer-events: auto; user-select: none; white-space: nowrap;
-            text-align: center; background: var(--glass-bg); backdrop-filter: blur(12px); padding: 5px 12px;
-            border-radius: 8px; border: 1px solid var(--glass-border); box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; }
-        .node-label:hover { border-color: var(--coral); }
+            text-align: center; background: rgba(30, 34, 51, 0.95); padding: 5px 12px;
+            border-radius: 8px; border: 1px solid var(--glass-border); box-shadow: var(--shadow-sm); cursor: pointer; 
+            will-change: transform, opacity; }
+        .node-label:hover { border-color: var(--coral); transition: border-color 0.15s; }
         .node-label.editing { padding: 2px 4px; cursor: text; }
         .node-label-input { width: 120px; padding: 3px 8px; font-family: var(--font-display); font-size: 11px; font-weight: 600;
             background: transparent; border: none; outline: none; color: var(--text-primary); text-align: center; }
@@ -880,7 +881,7 @@
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
         const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true; controls.dampingFactor = 0.05; controls.minDistance = 8; controls.maxDistance = isMobileInit ? 80 : 60;
+        controls.enableDamping = true; controls.dampingFactor = 0.25; controls.rotateSpeed = 0.7; controls.minDistance = 8; controls.maxDistance = isMobileInit ? 80 : 60;
         controls.enablePan = true; controls.panSpeed = 0.8; controls.maxPolarAngle = Math.PI * 0.85;
         controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
         controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
@@ -1401,6 +1402,27 @@
             animateCamera(camera.position.clone(), new THREE.Vector3(0, resetY, resetZ), controls.target.clone(), new THREE.Vector3(0, 0, 0));
             bus.emit('node:deselected');
         }
+        
+        function softDeselectNode() {
+            if (!selectedNode) return;
+            // Reset visual state of selected node
+            if (selectedNode.userData.spring) selectedNode.userData.spring.scaleTarget = 1;
+            selectedNode.scale.set(1, 1, 1);
+            if (selectedNode.userData.outlineMesh) selectedNode.userData.outlineMesh.scale.setScalar(1.08);
+            if (selectedNode.userData.isExpanded && selectedNode.userData.level > 0) toggleChildren(selectedNode);
+            selectedNode = null;
+            keyboardFocusNode = nodes.get(store.data.id) || null;
+            // Reset all node opacities
+            nodes.forEach(n => { if (n.visible) { n.material.opacity = 1; n.material.transparent = false; if (n.userData.spring) n.userData.spring.scaleTarget = 1; } });
+            connections.forEach(c => { if (c.visible) c.material.opacity = 0.6; });
+            // Gentle zoom out - move camera back by 20% from current position
+            const dir = camera.position.clone().sub(controls.target).normalize();
+            const currentDist = camera.position.distanceTo(controls.target);
+            const newDist = Math.min(currentDist * 1.25, controls.maxDistance * 0.9);
+            const newPos = controls.target.clone().add(dir.multiplyScalar(newDist));
+            animateCamera(camera.position.clone(), newPos, controls.target.clone(), controls.target.clone(), 400);
+            bus.emit('node:deselected');
+        }
 
         function animateCamera(fromPos, toPos, fromTarget, toTarget, duration = 900) {
             const startTime = Date.now();
@@ -1671,7 +1693,7 @@
         function onClick(e) { 
             if (isNodeDragMode) { finishNodeDrag(); return; } 
             if (isDragging) return; 
-            if (e.target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #depth-indicator, .modal-overlay, #radial-menu, .radial-item, .radial-toggle')) return; 
+            if (e.target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #depth-indicator, .modal-overlay, #radial-menu, .radial-item, .radial-toggle, .node-label')) return; 
             if (radialMenuOpen) { hideRadialMenu(); return; } 
             if (isMoveMode) return; // Don't select nodes in move mode
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1; 
@@ -1680,7 +1702,7 @@
             const visibleNodes = Array.from(nodes.values()).filter(n => n.visible); 
             const intersects = raycaster.intersectObjects(visibleNodes); 
             if (intersects.length > 0) selectNode(intersects[0].object); 
-            else deselectNode(); 
+            else if (selectedNode) softDeselectNode(); // Deselect and zoom out slightly
         }
         function onDoubleClick(e) { if (isNodeDragMode) return; if (e.target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #depth-indicator, .modal-overlay, #radial-menu')) return; mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1; raycaster.setFromCamera(mouse, camera); const visibleNodes = Array.from(nodes.values()).filter(n => n.visible); const intersects = raycaster.intersectObjects(visibleNodes); if (intersects.length > 0) { const mesh = intersects[0].object; store.selectedNodeId = mesh.userData.id; app.openModal('add', mesh.userData.id); } }
 
@@ -1771,7 +1793,7 @@
             const touch = e.changedTouches[0];
             // Ignore touches on UI elements - include radial items explicitly
             const target = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (target && target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #undo-btn, #depth-indicator, .modal-overlay, #radial-menu, .radial-item, .radial-toggle, #header, button, input, textarea, a')) return;
+            if (target && target.closest('#controls-panel, #info-panel, #search-container, #help-panel, #quick-capture, #theme-toggle, #undo-btn, #depth-indicator, .modal-overlay, #radial-menu, .radial-item, .radial-toggle, #header, .node-label, button, input, textarea, a')) return;
             
             // If radial menu is open, close it and don't do anything else
             if (radialMenuOpen) {
@@ -1801,8 +1823,10 @@
                 } else {
                     selectNode(mesh);
                 }
+            } else if (selectedNode) {
+                // Tap on empty space - deselect and zoom out slightly
+                softDeselectNode();
             }
-            // On mobile, tapping empty space does nothing (no camera reset)
         }
 
         // Radial menu
@@ -2302,32 +2326,45 @@
                 }
             }
             
-            // Update labels
+            // Update controls FIRST so camera position is current
+            controls.update();
+            
+            // Update labels - position at bottom of node surface (after controls.update for accurate camera position)
             const visibleNodeMeshes = Array.from(nodes.values()).filter(n => n.visible);
             nodes.forEach(mesh => {
                 if (mesh.visible && mesh.userData.labelDiv) {
-                    const vector = mesh.position.clone().project(camera);
-                    const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
-                    const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
+                    // Get node's world radius
+                    const nodeRadius = mesh.geometry.parameters.radius * mesh.scale.x;
+                    
+                    // Calculate label position at bottom of node
+                    const labelWorldPos = mesh.position.clone();
+                    labelWorldPos.y -= nodeRadius * 1.1; // Position just below node surface
+                    
+                    const labelScreenPos = labelWorldPos.clone().project(camera);
+                    const x = (labelScreenPos.x * 0.5 + 0.5) * window.innerWidth;
+                    const y = (labelScreenPos.y * -0.5 + 0.5) * window.innerHeight;
+                    
                     const dist = camera.position.distanceTo(mesh.position);
+                    
+                    // Check if node center is behind another node
                     const dirToNode = mesh.position.clone().sub(camera.position).normalize();
                     labelRaycaster.set(camera.position, dirToNode);
                     const intersects = labelRaycaster.intersectObjects(visibleNodeMeshes);
-                    const isOccluded = intersects.length > 0 && intersects[0].object !== mesh;
-                    if (isOccluded) { mesh.userData.labelDiv.style.display = 'none'; }
-                    else {
+                    const isOccluded = intersects.length > 0 && intersects[0].object !== mesh && intersects[0].distance < dist - nodeRadius;
+                    
+                    if (isOccluded || labelScreenPos.z > 1) { 
+                        mesh.userData.labelDiv.style.display = 'none'; 
+                    } else {
                         mesh.userData.labelDiv.style.display = 'block';
-                        const scale = Math.max(0.6, Math.min(1.1, 16 / dist));
-                        const opacity = Math.max(0.4, Math.min(1, 22 / dist));
-                        mesh.userData.labelDiv.style.left = x + 'px';
-                        mesh.userData.labelDiv.style.top = (y + 28) + 'px';
-                        mesh.userData.labelDiv.style.transform = `translate(-50%, 0) scale(${scale})`;
+                        const scale = Math.max(0.7, Math.min(1.0, 18 / dist));
+                        const opacity = Math.max(0.5, Math.min(1, 25 / dist));
+                        // Use translate3d for GPU acceleration - position from top-left of viewport
+                        mesh.userData.labelDiv.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, 0) scale(${scale})`;
                         mesh.userData.labelDiv.style.opacity = opacity;
                     }
                 } else if (mesh.userData.labelDiv) { mesh.userData.labelDiv.style.display = 'none'; }
             });
             
-            controls.update();
             renderer.render(scene, camera);
         }
         
