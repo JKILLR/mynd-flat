@@ -315,10 +315,13 @@
         #voice-btn.processing { background: var(--teal); color: white; }
         @keyframes voicePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 131, 84, 0.5); } 50% { box-shadow: 0 0 0 12px rgba(239, 131, 84, 0); } }
         
-        #voice-indicator { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: var(--z-modal);
-            background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--glass-border);
-            border-radius: 20px; padding: var(--space-6); text-align: center; display: none; min-width: 280px; }
+        #voice-indicator { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 450;
+            background: var(--bg-secondary); border: 1px solid var(--glass-border);
+            border-radius: 20px; padding: var(--space-6); text-align: center; display: none; min-width: 280px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
         #voice-indicator.active { display: block; animation: fadeIn 0.2s ease-out; }
+        #voice-backdrop { position: fixed; inset: 0; z-index: 449; background: rgba(0,0,0,0.5); display: none; }
+        #voice-backdrop.active { display: block; }
         .voice-icon { margin-bottom: var(--space-4); color: var(--coral); }
         .voice-icon.recording svg { animation: voiceIconPulse 1s ease-in-out infinite; }
         .voice-icon.processing { color: var(--teal); }
@@ -570,6 +573,7 @@
     </style>
 </head>
 <body>
+    <div id="voice-backdrop"></div>
     <div id="voice-indicator">
         <div class="voice-icon" id="voice-icon">
             <svg id="voice-icon-mic" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
@@ -1688,6 +1692,7 @@
             }
         });
         document.getElementById('voice-cancel').addEventListener('click', () => voiceAI.stop());
+        document.getElementById('voice-backdrop').addEventListener('click', () => voiceAI.stop());
         document.getElementById('voice-indicator').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) voiceAI.stop();
         });
@@ -2479,8 +2484,8 @@
             this.recognition.lang = 'en-US';
             
             this.recognition.onstart = () => {
-                this.isRecording = true;
-                this.updateUI('recording');
+                // State already set in start(), this is just confirmation
+                console.log('Voice recognition started');
             };
             
             this.recognition.onresult = (event) => {
@@ -2525,10 +2530,15 @@
             
             try {
                 document.getElementById('voice-transcript').textContent = 'Say something...';
+                // Show UI immediately - don't wait for onstart callback
+                this.isRecording = true;
+                this.updateUI('recording');
                 this.recognition.start();
                 haptic.medium();
             } catch (e) {
                 console.error('Failed to start recognition:', e);
+                this.isRecording = false;
+                this.updateUI('idle');
                 app.showToast('Failed to start voice recognition', 'error');
             }
         },
@@ -2545,6 +2555,7 @@
         updateUI(state) {
             const voiceBtn = document.getElementById('voice-btn');
             const indicator = document.getElementById('voice-indicator');
+            const backdrop = document.getElementById('voice-backdrop');
             const icon = document.getElementById('voice-icon');
             const micIcon = document.getElementById('voice-icon-mic');
             const brainIcon = document.getElementById('voice-icon-brain');
@@ -2552,11 +2563,13 @@
             
             voiceBtn.classList.remove('recording', 'processing');
             indicator.classList.remove('active');
+            backdrop.classList.remove('active');
             icon.classList.remove('recording', 'processing');
             
             if (state === 'recording') {
                 voiceBtn.classList.add('recording');
                 indicator.classList.add('active');
+                backdrop.classList.add('active');
                 icon.classList.add('recording');
                 micIcon.style.display = 'block';
                 brainIcon.style.display = 'none';
@@ -2564,6 +2577,7 @@
             } else if (state === 'processing') {
                 voiceBtn.classList.add('processing');
                 indicator.classList.add('active');
+                backdrop.classList.add('active');
                 icon.classList.add('processing');
                 micIcon.style.display = 'none';
                 brainIcon.style.display = 'block';
