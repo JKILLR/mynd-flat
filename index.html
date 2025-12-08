@@ -984,7 +984,35 @@
         handleSearchKeydown(e) { const results = this.els.searchResults.querySelectorAll('.search-result[data-id]'); if (e.key === 'ArrowDown') { e.preventDefault(); this.searchResultIndex = Math.min(this.searchResultIndex + 1, results.length - 1); this.updateSearchSelection(results); } else if (e.key === 'ArrowUp') { e.preventDefault(); this.searchResultIndex = Math.max(this.searchResultIndex - 1, 0); this.updateSearchSelection(results); } else if (e.key === 'Enter' && this.searchResultIndex >= 0) { e.preventDefault(); const sel = results[this.searchResultIndex]; if (sel) { bus.emit('node:focus', { id: sel.dataset.id }); this.els.searchResults.classList.remove('active'); this.els.searchInput.value = ''; this.collapseSearch(); } } else if (e.key === 'Escape') { this.collapseSearch(); this.els.searchInput.blur(); } }
         updateSearchSelection(results) { results.forEach((el, i) => el.classList.toggle('selected', i === this.searchResultIndex)); }
         hideLoading() { this.els.loading.classList.add('hidden'); setTimeout(() => this.els.loading.remove(), 500); }
-        showNodeInfo(nodeData) { store.selectedNodeId = nodeData.id; this.toggleQuickCapture(false); this.els.nodeTitle.textContent = nodeData.label; this.els.panelColorDot.style.background = nodeData.color; let details = nodeData.description ? `<p>${this.escapeHTML(nodeData.description)}</p>` : ''; const cc = nodeData.children?.length || 0; if (!details && cc > 0) details = `<p>${cc} child node${cc > 1 ? 's' : ''}</p>`; this.els.nodeDetails.innerHTML = details; let metaHtml = `<span class="meta-tag">${cc} nodes</span>`; if (nodeData.url) metaHtml += `<span class="meta-tag link-tag">${LINK_ICON_SVG} Link</span>`; this.els.nodeMeta.innerHTML = metaHtml; const pa = document.querySelector('.panel-actions'); let btns = ''; if (nodeData.url) btns += `<button class="action-btn secondary" id="open-link-btn" style="background: var(--teal); color: white; border: none;">${LINK_ICON_SVG} Open</button>`; btns += `<button class="action-btn secondary" id="edit-node-btn">Edit</button>`; if (cc > 0) btns += `<button class="action-btn secondary" id="dive-node-btn" style="background: var(--coral); color: white; border: none;">↓ Dive</button>`; btns += `<button class="action-btn primary" id="add-node-btn">+ Add</button>`; pa.innerHTML = btns; if (nodeData.url) document.getElementById('open-link-btn').addEventListener('click', () => { const safeUrl = sanitizeUrl(nodeData.url); if (safeUrl) window.open(safeUrl, '_blank'); else app.showToast('Invalid URL', 'error'); }); if (cc > 0) document.getElementById('dive-node-btn').addEventListener('click', () => bus.emit('node:tryDive', { id: nodeData.id })); document.getElementById('add-node-btn').addEventListener('click', () => { if (store.selectedNodeId) this.openModal('add', store.selectedNodeId); }); document.getElementById('edit-node-btn').addEventListener('click', () => { if (store.selectedNodeId) this.openModal('edit', store.selectedNodeId); }); this.els.infoPanel.classList.add('active'); this.updateBreadcrumb(nodeData.id); }
+        showNodeInfo(nodeData) { 
+            store.selectedNodeId = nodeData.id; 
+            this.toggleQuickCapture(false); 
+            this.els.nodeTitle.textContent = nodeData.label; 
+            this.els.panelColorDot.style.background = nodeData.color; 
+            let details = nodeData.description ? `<p>${this.escapeHTML(nodeData.description)}</p>` : ''; 
+            const cc = nodeData.children?.length || 0; 
+            if (!details && cc > 0) details = `<p>${cc} child node${cc > 1 ? 's' : ''}</p>`; 
+            this.els.nodeDetails.innerHTML = details; 
+            let metaHtml = `<span class="meta-tag">${cc} nodes</span>`; 
+            if (nodeData.url) metaHtml += `<span class="meta-tag link-tag">${LINK_ICON_SVG} Link</span>`; 
+            this.els.nodeMeta.innerHTML = metaHtml; 
+            const pa = document.querySelector('.panel-actions'); 
+            const isRoot = nodeData.id === store.data.id;
+            let btns = ''; 
+            if (nodeData.url) btns += `<button class="action-btn secondary" id="open-link-btn" style="background: var(--teal); color: white; border: none;">${LINK_ICON_SVG} Open</button>`; 
+            btns += `<button class="action-btn secondary" id="edit-node-btn">Edit</button>`; 
+            if (cc > 0) btns += `<button class="action-btn secondary" id="dive-node-btn" style="background: var(--coral); color: white; border: none;">↓ Dive</button>`; 
+            btns += `<button class="action-btn primary" id="add-node-btn">+ Add</button>`; 
+            if (!isRoot) btns += `<button class="action-btn secondary" id="delete-node-btn" style="background: #E55050; color: white; border: none;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>`; 
+            pa.innerHTML = btns; 
+            if (nodeData.url) document.getElementById('open-link-btn').addEventListener('click', () => { const safeUrl = sanitizeUrl(nodeData.url); if (safeUrl) window.open(safeUrl, '_blank'); else app.showToast('Invalid URL', 'error'); }); 
+            if (cc > 0) document.getElementById('dive-node-btn').addEventListener('click', () => bus.emit('node:tryDive', { id: nodeData.id })); 
+            document.getElementById('add-node-btn').addEventListener('click', () => { if (store.selectedNodeId) this.openModal('add', store.selectedNodeId); }); 
+            document.getElementById('edit-node-btn').addEventListener('click', () => { if (store.selectedNodeId) this.openModal('edit', store.selectedNodeId); }); 
+            if (!isRoot) document.getElementById('delete-node-btn').addEventListener('click', () => { if (store.selectedNodeId) this.confirmDelete(store.selectedNodeId); });
+            this.els.infoPanel.classList.add('active'); 
+            this.updateBreadcrumb(nodeData.id); 
+        }
         hideNodeInfo() { store.selectedNodeId = null; this.els.infoPanel.classList.remove('active'); this.els.breadcrumb.classList.remove('active'); }
         updateBreadcrumb(nodeId) { const path = store.getPath(nodeId); if (path.length === 0) { this.els.breadcrumb.classList.remove('active'); return; } this.els.breadcrumbPath.innerHTML = path.map((n, i) => { const isLast = i === path.length - 1; return `<span class="breadcrumb-item ${isLast ? 'current' : ''}">${n.label}</span>` + (isLast ? '' : '<span class="breadcrumb-separator">›</span>'); }).join(''); this.els.breadcrumb.classList.add('active'); }
         openModal(mode, targetId) { this.modalMode = mode; if (mode === 'add') { this.modalParentId = targetId; this.modalEditId = null; this.els.modalTitle.textContent = 'Add Node'; document.getElementById('modal-submit').textContent = 'Add Node'; this.els.nameInput.value = ''; this.els.descInput.value = ''; this.els.urlInput.value = ''; const autoColor = store.getAutoColor(targetId); this.selectedColor = autoColor; document.querySelectorAll('.color-option').forEach(opt => opt.classList.toggle('selected', opt.dataset.color === autoColor)); } else { this.modalEditId = targetId; this.modalParentId = null; const n = store.findNode(targetId); if (!n) return; this.els.modalTitle.textContent = 'Edit Node'; document.getElementById('modal-submit').textContent = 'Save Changes'; this.els.nameInput.value = n.label; this.els.descInput.value = n.description || ''; this.els.urlInput.value = n.url || ''; this.selectedColor = n.color; document.querySelectorAll('.color-option').forEach(opt => opt.classList.toggle('selected', opt.dataset.color === n.color)); } this.els.modal.classList.add('active'); this.els.nameInput.focus(); }
@@ -1085,28 +1113,37 @@
             else data.size = Math.max(0.35, 0.55 - (level - 2) * 0.05);
             let baseRadius = level === 0 ? 0 : (level === 1 ? 6.5 : 4.0);
             let expandedRadius = level === 0 ? 0 : (level === 1 ? 9 : 5.5 + (level - 2) * 0.8);
-            if (level === 0) { data.position = [0, 0, 0]; data.basePosition = [0, 0, 0]; data.expandedPosition = [0, 0, 0]; data.branchAngle = 0; }
+            if (level === 0) { 
+                data.position = [0, 0, 0]; 
+                data.basePosition = [0, 0, 0]; 
+                data.expandedPosition = [0, 0, 0]; 
+                data.branchAngle = 0; 
+            }
             else if (level === 1) {
-                const angleStep = (Math.PI * 2) / Math.max(total, 1); const angle = angleStep * index;
-                const verticalOffset = (index - (total - 1) / 2) * 1.5 * 0.25;
+                // Spread level 1 nodes evenly in a full circle (360 degrees)
+                // Start from the top (negative Z) and go clockwise
+                const angleStep = (Math.PI * 2) / Math.max(total, 1); 
+                const startAngle = -Math.PI / 2; // Start at top (negative Z)
+                const angle = startAngle + angleStep * index;
+                const verticalOffset = (index % 2 === 0 ? 0.3 : -0.3) * 0.5; // Slight alternating height
                 data.basePosition = [Math.cos(angle) * baseRadius, verticalOffset, Math.sin(angle) * baseRadius];
                 data.expandedPosition = [Math.cos(angle) * expandedRadius, verticalOffset, Math.sin(angle) * expandedRadius];
-                data.position = [...data.basePosition]; data.branchAngle = angle;
+                data.position = [...data.basePosition]; 
+                data.branchAngle = angle;
             } else {
-                // Dynamic spread angle based on number of children - more children = wider spread
-                const baseSpread = Math.PI * 0.65; // ~117 degrees for 2 children (increased from 0.55)
-                const spreadAngle = Math.min(Math.PI * 1.0, baseSpread + (total - 2) * 0.2); // Increase spread for more children, max 180 degrees
+                // Level 2+ nodes branch outward from their parent
+                const baseSpread = Math.PI * 0.65;
+                const spreadAngle = Math.min(Math.PI * 1.0, baseSpread + (total - 2) * 0.2);
                 const halfSpread = spreadAngle / 2;
-                // ALWAYS use angle from origin to parent - ensures children spread OUTWARD from center
                 const outwardAngle = Math.atan2(parentPos[2], parentPos[0]);
                 let childAngle = total === 1 ? outwardAngle : outwardAngle - halfSpread + (spreadAngle / (total - 1)) * index;
                 const verticalOffset = (index - (total - 1) / 2) * (0.8 + level * 0.15) * 0.2;
-                // Increase radius when there are more siblings - more aggressive scaling
                 const adjustedBaseRadius = baseRadius + Math.max(0, (total - 2) * 0.5);
                 const adjustedExpandedRadius = expandedRadius + Math.max(0, (total - 2) * 0.5);
                 data.basePosition = [parentPos[0] + Math.cos(childAngle) * adjustedBaseRadius, parentPos[1] + verticalOffset, parentPos[2] + Math.sin(childAngle) * adjustedBaseRadius];
                 data.expandedPosition = [parentPos[0] + Math.cos(childAngle) * adjustedExpandedRadius, parentPos[1] + verticalOffset, parentPos[2] + Math.sin(childAngle) * adjustedExpandedRadius];
-                data.position = [...data.basePosition]; data.branchAngle = childAngle;
+                data.position = [...data.basePosition]; 
+                data.branchAngle = childAngle;
             }
             if (data.children) data.children.forEach((child, i) => { calculatePositions(child, data.basePosition, level + 1, data.branchAngle || 0, data.children.length, i); });
             return data;
@@ -1689,8 +1726,17 @@
                     if (mesh.userData.expandedPosition && mesh.userData.level > 0) { mesh.position.set(...mesh.userData.expandedPosition); if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.position.copy(mesh.position); mesh.userData.spring.target.set(...mesh.userData.expandedPosition); if (mesh.userData.connectionLine && mesh.userData.parent) { const parentMesh = nodes.get(mesh.userData.parent.id); if (parentMesh) updateConnection(mesh, parentMesh); } }
                     mesh.userData.children.forEach((childData, i) => {
                         const childMesh = nodes.get(childData.id);
-                        if (childMesh) { childMesh.visible = true; if (childMesh.userData.outlineMesh) childMesh.userData.outlineMesh.visible = true; childMesh.userData.collapsed = false; if (childMesh.userData.labelDiv) childMesh.userData.labelDiv.style.display = 'block';
-                            if (mesh.userData.expandedPosition && mesh.userData.level > 0) { const parentPos = new THREE.Vector3(...mesh.userData.expandedPosition); const total = mesh.userData.children.length; const angleSpread = Math.PI * 0.55; const startAngle = -angleSpread / 2; const angleStep = total > 1 ? angleSpread / (total - 1) : 0; const angle = startAngle + i * angleStep; const childRadius = 3.5 + (childMesh.userData.level - 2) * 0.4; const childX = parentPos.x + Math.sin(angle) * childRadius; const childZ = parentPos.z + Math.cos(angle) * childRadius; const childY = parentPos.y - 0.3; childMesh.position.set(childX, childY, childZ); if (childMesh.userData.outlineMesh) childMesh.userData.outlineMesh.position.copy(childMesh.position); childMesh.userData.spring.target.set(childX, childY, childZ); }
+                        if (childMesh) { 
+                            childMesh.visible = true; 
+                            if (childMesh.userData.outlineMesh) childMesh.userData.outlineMesh.visible = true; 
+                            childMesh.userData.collapsed = false; 
+                            if (childMesh.userData.labelDiv) childMesh.userData.labelDiv.style.display = 'block';
+                            // Use the pre-calculated expandedPosition instead of recalculating
+                            if (childMesh.userData.expandedPosition) {
+                                childMesh.position.set(...childMesh.userData.expandedPosition);
+                                if (childMesh.userData.outlineMesh) childMesh.userData.outlineMesh.position.copy(childMesh.position);
+                                childMesh.userData.spring.target.set(...childMesh.userData.expandedPosition);
+                            }
                             if (childMesh.userData.connectionLine) { childMesh.userData.connectionLine.visible = true; updateConnection(childMesh, mesh); }
                         }
                     });
