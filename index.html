@@ -264,11 +264,11 @@
         .radial-item:hover .tooltip { opacity: 1; }
         .drag-mode-active { cursor: grab !important; }
         .drag-mode-active:active { cursor: grabbing !important; }
-        .node-label { position: absolute; left: 0; top: 0; z-index: 100; font-family: var(--font-display); font-size: 11px; font-weight: 600;
+        .node-label { font-family: var(--font-display); font-size: 11px; font-weight: 600;
             letter-spacing: 0.5px; color: var(--text-primary); pointer-events: auto; user-select: none; white-space: nowrap;
             text-align: center; background: var(--label-bg); padding: 5px 12px;
             border-radius: 8px; border: 1px solid var(--glass-border); box-shadow: var(--shadow-sm); cursor: pointer; 
-            will-change: transform, opacity; }
+            transform: translateX(-50%); /* Center horizontally under node */ }
         .node-label:hover { border-color: var(--coral); transition: border-color 0.15s; }
         .node-label.editing { padding: 2px 4px; cursor: text; }
         .node-label-input { width: 120px; padding: 3px 8px; font-family: var(--font-display); font-size: 11px; font-weight: 600;
@@ -735,15 +735,13 @@
     // Store
     const STORAGE_KEY = 'mynd-mind-map-v13';
     const defaultData = {
-        id: 'mynd', label: 'My Mind', color: '#EF8354', description: 'Your central idea hub',
+        id: 'mynd', label: 'My Mind', color: '#EF8354', description: '',
         children: [
-            { id: 'ideas', label: 'Ideas', color: '#4ECDC4', description: 'Creative sparks', children: [] },
-            { id: 'projects', label: 'Projects', color: '#9B5DE5', description: 'Active work', children: [] },
-            { id: 'goals', label: 'Goals', color: '#F7B731', description: 'Aspirations', children: [
-                { id: 'goal-1', label: '1', color: '#26DE81', description: '', children: [] }
-            ] },
-            { id: 'node-654', label: '654', color: '#FFFFFF', description: '', children: [] },
-            { id: 'node-black', label: 'black', color: '#222222', description: '', children: [] }
+            { id: 'todo', label: 'To Do', color: '#FFFFFF', description: '', children: [] },
+            { id: 'wants', label: 'Wants', color: '#FF6B9D', description: '', children: [] },
+            { id: 'ideas', label: 'Ideas', color: '#4ECDC4', description: '', children: [] },
+            { id: 'work', label: 'Work', color: '#F7B731', description: '', children: [] },
+            { id: 'goals', label: 'Goals', color: '#9B5DE5', description: '', children: [] }
         ]
     };
 
@@ -1149,6 +1147,69 @@
             return data;
         }
 
+        // Create 3D sprite label that properly occludes behind nodes
+        function createLabelSprite(text, hasLink) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const fontSize = 42;
+            const padding = 24;
+            const borderRadius = 16;
+            
+            ctx.font = `600 ${fontSize}px Inter, system-ui, sans-serif`;
+            const textWidth = ctx.measureText(text).width;
+            const width = textWidth + padding * 2 + (hasLink ? 30 : 0);
+            const height = fontSize + padding * 1.5;
+            
+            canvas.width = width * 2; // 2x for retina
+            canvas.height = height * 2;
+            ctx.scale(2, 2);
+            
+            // Background with rounded corners
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            ctx.fillStyle = isDark ? 'rgba(30, 34, 51, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+            ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(1, 1, width - 2, height - 2, borderRadius);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Text
+            ctx.fillStyle = isDark ? '#e2e8f0' : '#1e2233';
+            ctx.font = `600 ${fontSize}px Inter, system-ui, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, width / 2 + (hasLink ? 10 : 0), height / 2);
+            
+            // Link icon if needed
+            if (hasLink) {
+                ctx.fillStyle = isDark ? '#4ECDC4' : '#4ECDC4';
+                ctx.font = `${fontSize * 0.7}px sans-serif`;
+                ctx.fillText('🔗', padding * 0.8, height / 2);
+            }
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            
+            const material = new THREE.SpriteMaterial({ 
+                map: texture, 
+                transparent: true,
+                depthTest: true,
+                depthWrite: false
+            });
+            
+            const sprite = new THREE.Sprite(material);
+            const aspect = width / height;
+            const spriteHeight = 0.6;
+            sprite.scale.set(spriteHeight * aspect, spriteHeight, 1);
+            
+            sprite.userData.canvas = canvas;
+            sprite.userData.baseWidth = width;
+            sprite.userData.baseHeight = height;
+            
+            return sprite;
+        }
+
         function createNodeMesh(data, parent = null) {
             const geometry = new THREE.SphereGeometry(data.size, 32, 32);
             const material = createFlatMaterial(data.color);
@@ -1162,46 +1223,18 @@
             outline.position.copy(mesh.position); scene.add(outline); mesh.userData.outlineMesh = outline;
             mesh.userData.spring = { velocity: new THREE.Vector3(0, 0, 0), target: new THREE.Vector3(...startPos), scaleVelocity: 0, scaleTarget: 1, currentScale: 1, rotVelocity: new THREE.Vector3(0, 0, 0), rotTarget: new THREE.Vector3(0, 0, 0), floatOffset: Math.random() * Math.PI * 2, floatSpeed: 0.2 + Math.random() * 0.15 };
             scene.add(mesh);
-            const label = document.createElement('div'); label.className = 'node-label'; 
-            label.innerHTML = data.url ? `<span class="link-icon">${LINK_ICON_SMALL}</span>${escapeHTML(data.label)}` : escapeHTML(data.label);
-            label.style.display = data.level >= 2 ? 'none' : 'block'; document.body.appendChild(label); mesh.userData.labelDiv = label;
-            // Inline editing on label click
-            label.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (label.classList.contains('editing')) return;
-                const nodeId = mesh.userData.id;
-                const nodeData = store.findNode(nodeId);
-                if (!nodeData) return;
-                label.classList.add('editing');
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.className = 'node-label-input';
-                input.value = nodeData.label;
-                input.maxLength = 40;
-                label.innerHTML = '';
-                label.appendChild(input);
-                input.focus();
-                input.select();
-                
-                const saveEdit = () => {
-                    const newLabel = input.value.trim();
-                    if (newLabel && newLabel !== nodeData.label) {
-                        store.updateNode(nodeId, { label: newLabel });
-                        haptic.light();
-                    }
-                    label.classList.remove('editing');
-                    label.innerHTML = nodeData.url ? `<span class="link-icon">${LINK_ICON_SMALL}</span>${escapeHTML(store.findNode(nodeId).label)}` : escapeHTML(store.findNode(nodeId).label);
-                };
-                
-                input.addEventListener('blur', saveEdit);
-                input.addEventListener('keydown', (ke) => {
-                    if (ke.key === 'Enter') { ke.preventDefault(); input.blur(); }
-                    if (ke.key === 'Escape') { input.value = nodeData.label; input.blur(); }
-                });
-            });
+            
+            const labelSprite = createLabelSprite(data.label, !!data.url);
+            labelSprite.position.set(0, -data.size - 0.5, 0);
+            labelSprite.visible = data.level < 2;
+            mesh.add(labelSprite);
+            mesh.userData.labelSprite = labelSprite;
+            mesh.userData.labelText = data.label;
+            mesh.userData.hasLink = !!data.url;
+            
             const parentIsExpanded = parent && store.expandedNodes.has(parent.id);
-            if (data.level >= 2 && !parentIsExpanded) { mesh.visible = false; outline.visible = false; mesh.userData.collapsed = true; }
-            else if (data.level >= 2 && parentIsExpanded) { mesh.visible = true; outline.visible = true; mesh.userData.collapsed = false; mesh.userData.labelDiv.style.display = 'block'; }
+            if (data.level >= 2 && !parentIsExpanded) { mesh.visible = false; outline.visible = false; mesh.userData.collapsed = true; labelSprite.visible = false; }
+            else if (data.level >= 2 && parentIsExpanded) { mesh.visible = true; outline.visible = true; mesh.userData.collapsed = false; labelSprite.visible = true; }
             if (parent) { const connection = createConnection(parent, data); if (connection) { mesh.userData.connectionLine = connection; if (data.level >= 2 && !parentIsExpanded) connection.visible = false; } }
             nodes.set(data.id, mesh);
             if (data.children) data.children.forEach(child => createNodeMesh(child, data));
@@ -1296,7 +1329,7 @@
                         child.visible = true; 
                         if (child.userData.outlineMesh) child.userData.outlineMesh.visible = true;
                         child.userData.collapsed = false; 
-                        if (child.userData.labelDiv) child.userData.labelDiv.style.display = 'none';
+                        if (child.userData.labelSprite) child.userData.labelSprite.visible = false;
                         
                         // Use target position for parent (where it's animating to)
                         const parentPos = parentTargetPos.clone();
@@ -1399,7 +1432,7 @@
                                     if (child.userData.outlineMesh) child.userData.outlineMesh.scale.setScalar(1.08); 
                                     child.material.opacity = 1; 
                                     child.material.transparent = false; 
-                                    if (child.userData.labelDiv) child.userData.labelDiv.style.display = 'block'; 
+                                    if (child.userData.labelSprite) child.userData.labelSprite.visible = true; 
                                     if (child.userData.connectionLine) child.userData.connectionLine.material.opacity = 0.6; 
                                     bounceNode(child, 0.05); 
                                 }
@@ -1425,7 +1458,7 @@
                             // Hide immediately (no animation for grandchildren+)
                             childMesh.visible = false;
                             if (childMesh.userData.outlineMesh) childMesh.userData.outlineMesh.visible = false;
-                            if (childMesh.userData.labelDiv) childMesh.userData.labelDiv.style.display = 'none';
+                            if (childMesh.userData.labelSprite) childMesh.userData.labelSprite.visible = false;
                             if (childMesh.userData.connectionLine) childMesh.userData.connectionLine.visible = false;
                             
                             // Recursively hide all descendants
@@ -1445,7 +1478,7 @@
                                 gcMesh.userData.collapsed = true;
                                 gcMesh.userData.isExpanded = false;
                                 store.expandedNodes.delete(gcData.id);
-                                if (gcMesh.userData.labelDiv) gcMesh.userData.labelDiv.style.display = 'none';
+                                if (gcMesh.userData.labelSprite) gcMesh.userData.labelSprite.visible = false;
                                 if (gcMesh.userData.connectionLine) gcMesh.userData.connectionLine.visible = false;
                                 hideAllDescendants(gcMesh);
                             }
@@ -1495,7 +1528,7 @@
                             child.userData.collapsed = true; 
                             child.userData.isExpanded = false;
                             store.expandedNodes.delete(child.userData.id);
-                            if (child.userData.labelDiv) child.userData.labelDiv.style.display = 'none'; 
+                            if (child.userData.labelSprite) child.userData.labelSprite.visible = false; 
                             if (child.userData.connectionLine) child.userData.connectionLine.visible = false; 
                         }
                     }
@@ -1642,7 +1675,7 @@
                     camera.position.lerpVectors(cameraStartPos, approachTarget, subEase);
                     controls.target.lerpVectors(startTarget, nodePos.clone().add(dirToNode.clone().multiplyScalar(subEase * 3)), subEase);
                     const fadeProgress = Math.max(0, (subProgress - 0.3) / 0.7);
-                    nodes.forEach((n, id) => { if (id !== targetNode.id) { n.material.transparent = true; n.material.opacity = 1 - fadeProgress; if (n.userData.labelDiv) n.userData.labelDiv.style.opacity = String(1 - fadeProgress); } });
+                    nodes.forEach((n, id) => { if (id !== targetNode.id) { n.material.transparent = true; n.material.opacity = 1 - fadeProgress; if (n.userData.labelSprite) n.userData.labelSprite.material.opacity = 1 - fadeProgress; } });
                     connections.forEach(c => { c.material.opacity = 0.6 * (1 - fadeProgress); });
                 } else {
                     const subProgress = (progress - 0.6) / 0.4; const subEase = 1 - Math.pow(1 - subProgress, 3);
@@ -1709,7 +1742,13 @@
         }
         
         function rebuildSceneAtContext(contextId, skipAnimation = false) {
-            nodes.forEach(mesh => { scene.remove(mesh); if (mesh.userData.outlineMesh) { scene.remove(mesh.userData.outlineMesh); mesh.userData.outlineMesh.geometry.dispose(); mesh.userData.outlineMesh.material.dispose(); } mesh.userData.labelDiv?.remove(); mesh.geometry.dispose(); mesh.material.dispose(); });
+            nodes.forEach(mesh => { 
+                scene.remove(mesh); 
+                if (mesh.userData.outlineMesh) { scene.remove(mesh.userData.outlineMesh); mesh.userData.outlineMesh.geometry.dispose(); mesh.userData.outlineMesh.material.dispose(); } 
+                if (mesh.userData.labelSprite) { mesh.userData.labelSprite.material.map?.dispose(); mesh.userData.labelSprite.material.dispose(); }
+                mesh.geometry.dispose(); 
+                mesh.material.dispose(); 
+            });
             connections.forEach(conn => { scene.remove(conn); conn.geometry.dispose(); conn.material.dispose(); });
             const existingShell = scene.getObjectByName('contextShell'); if (existingShell) { scene.remove(existingShell); existingShell.geometry.dispose(); existingShell.material.dispose(); }
             nodes.clear(); connections.length = 0; selectedNode = null; keyboardFocusNode = null;
@@ -1730,7 +1769,7 @@
                             childMesh.visible = true; 
                             if (childMesh.userData.outlineMesh) childMesh.userData.outlineMesh.visible = true; 
                             childMesh.userData.collapsed = false; 
-                            if (childMesh.userData.labelDiv) childMesh.userData.labelDiv.style.display = 'block';
+                            if (childMesh.userData.labelSprite) childMesh.userData.labelSprite.visible = true;
                             // Use the pre-calculated expandedPosition instead of recalculating
                             if (childMesh.userData.expandedPosition) {
                                 childMesh.position.set(...childMesh.userData.expandedPosition);
@@ -2020,6 +2059,7 @@
         // Radial menu
         function showRadialMenu(mesh, screenPos) { 
             if (radialMenuHideTimeout) { clearTimeout(radialMenuHideTimeout); radialMenuHideTimeout = null; } 
+            if (!mesh.geometry?.parameters?.radius) return; // Safety check
             radialMenuNode = mesh; 
             const nodeWorldRadius = mesh.geometry.parameters.radius * mesh.scale.x; 
             const dist = camera.position.distanceTo(mesh.position); 
@@ -2056,7 +2096,7 @@
         function hideRadialMenu() { radialMenu.classList.remove('visible'); radialMenuOpen = false; radialAnimating = false; radialToggle.classList.remove('active'); radialToggle.style.transform = 'translate(-50%, -50%)'; radialHitArea.classList.remove('active'); radialNodeHitArea.classList.remove('active'); radialItems.forEach(item => { item.classList.remove('visible'); item.style.opacity = ''; item.style.transform = ''; }); radialMenuNode = null; }
         function toggleRadialItems() {
             radialMenuOpen = !radialMenuOpen; radialToggle.classList.toggle('active', radialMenuOpen); radialAnimating = true;
-            if (radialMenuOpen && radialMenuNode) {
+            if (radialMenuOpen && radialMenuNode && radialMenuNode.geometry?.parameters?.radius) {
                 const nodeWorldRadius = radialMenuNode.geometry.parameters.radius * radialMenuNode.scale.x; 
                 const dist = camera.position.distanceTo(radialMenuNode.position); 
                 const fov = camera.fov * (Math.PI / 180); 
@@ -2121,7 +2161,7 @@
                 }
                 animateExpand();
             } else {
-                const visibleItems = Array.from(radialItems).filter(item => item.classList.contains('visible')); radialHitArea.classList.remove('active'); radialNodeHitArea.classList.remove('active'); if (!radialMenuNode || visibleItems.length === 0) { visibleItems.forEach(item => item.classList.remove('visible')); radialAnimating = false; return; } const nodeWorldRadius = radialMenuNode.geometry.parameters.radius * radialMenuNode.scale.x; const fov = camera.fov * (Math.PI / 180); const screenHeight = window.innerHeight; const duration = 250; const startTime = Date.now(); const startPositions = visibleItems.map(item => ({ x: parseFloat(item.style.left) || 0, y: parseFloat(item.style.top) || 0 })); const isMobile = window.innerWidth <= 768;
+                const visibleItems = Array.from(radialItems).filter(item => item.classList.contains('visible')); radialHitArea.classList.remove('active'); radialNodeHitArea.classList.remove('active'); if (!radialMenuNode || !radialMenuNode.geometry?.parameters?.radius || visibleItems.length === 0) { visibleItems.forEach(item => item.classList.remove('visible')); radialAnimating = false; return; } const nodeWorldRadius = radialMenuNode.geometry.parameters.radius * radialMenuNode.scale.x; const fov = camera.fov * (Math.PI / 180); const screenHeight = window.innerHeight; const duration = 250; const startTime = Date.now(); const startPositions = visibleItems.map(item => ({ x: parseFloat(item.style.left) || 0, y: parseFloat(item.style.top) || 0 })); const isMobile = window.innerWidth <= 768;
                 function animateCollapse() { const elapsed = Date.now() - startTime; const progress = Math.min(elapsed / duration, 1); const ease = progress * progress; const currentDist = camera.position.distanceTo(radialMenuNode.position); const currentNodeScreenRadius = (nodeWorldRadius / (2 * currentDist * Math.tan(fov / 2))) * screenHeight; const currentItemRadius = isMobile ? Math.max(currentNodeScreenRadius + 30, 60) : Math.max(currentNodeScreenRadius + 15, 35); const currentButtonScale = isMobile ? 1.1 : Math.min(1.2, Math.max(0.9, currentNodeScreenRadius / 60)); visibleItems.forEach((item, i) => { const start = startPositions[i]; const x = start.x + (currentItemRadius - start.x) * ease; const y = start.y + (0 - start.y) * ease; const scale = currentButtonScale * (1 - 0.5 * ease); item.style.left = x + 'px'; item.style.top = y + 'px'; item.style.transform = `translate(-50%, -50%) scale(${scale})`; item.style.opacity = 1 - ease; }); radialToggle.style.left = currentItemRadius + 'px'; if (progress < 1) requestAnimationFrame(animateCollapse); else { visibleItems.forEach(item => { item.classList.remove('visible'); item.style.opacity = ''; item.style.transform = ''; }); radialToggle.style.transform = 'translate(-50%, -50%)'; radialAnimating = false; } }
                 animateCollapse();
             }
@@ -2292,7 +2332,7 @@
             nodes.forEach(mesh => {
                 scene.remove(mesh);
                 if (mesh.userData.outlineMesh) { scene.remove(mesh.userData.outlineMesh); mesh.userData.outlineMesh.geometry.dispose(); mesh.userData.outlineMesh.material.dispose(); }
-                mesh.userData.labelDiv?.remove();
+                if (mesh.userData.labelSprite) { mesh.userData.labelSprite.material.map?.dispose(); mesh.userData.labelSprite.material.dispose(); }
                 mesh.geometry.dispose();
                 mesh.material.dispose();
             });
@@ -2321,7 +2361,7 @@
                             childMesh.visible = true;
                             if (childMesh.userData.outlineMesh) childMesh.userData.outlineMesh.visible = true;
                             childMesh.userData.collapsed = false;
-                            childMesh.userData.labelDiv.style.display = 'block';
+                            childMesh.userData.labelSprite.visible = true;
                             if (childMesh.userData.connectionLine) { childMesh.userData.connectionLine.visible = true; updateConnection(childMesh, mesh); }
                         }
                     });
@@ -2364,7 +2404,7 @@
                             mesh.material.transparent = true;
                             mesh.material.opacity = 0;
                             if (mesh.userData.connectionLine) mesh.userData.connectionLine.visible = false;
-                            mesh.userData.labelDiv.style.display = 'none';
+                            mesh.userData.labelSprite.visible = false;
                             const startPos = parentMesh.position.clone();
                             const startTime = Date.now();
                             const duration = 800;
@@ -2378,7 +2418,7 @@
                                 mesh.material.opacity = ease;
                                 if (progress > 0.2 && mesh.userData.connectionLine) { mesh.userData.connectionLine.visible = true; updateConnection(mesh, parentMesh); }
                                 if (progress < 1) requestAnimationFrame(animateNew);
-                                else { mesh.material.transparent = false; mesh.material.opacity = 1; mesh.userData.labelDiv.style.display = 'block'; if (mesh.userData.spring) mesh.userData.spring.target.copy(targetPos); bounceNode(mesh, 0.08); selectNode(mesh); }
+                                else { mesh.material.transparent = false; mesh.material.opacity = 1; mesh.userData.labelSprite.visible = true; if (mesh.userData.spring) mesh.userData.spring.target.copy(targetPos); bounceNode(mesh, 0.08); selectNode(mesh); }
                             }
                             animateNew();
                         }
@@ -2403,7 +2443,7 @@
                         if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.scale.setScalar(1.08);
                         mesh.material.transparent = false;
                         mesh.material.opacity = 1;
-                        if (mesh.userData.labelDiv) mesh.userData.labelDiv.style.display = 'block';
+                        if (mesh.userData.labelSprite) mesh.userData.labelSprite.visible = true;
                         if (mesh.userData.spring) mesh.userData.spring.target.copy(newPos);
                         if (savedExpanded.has(id)) mesh.userData.isExpanded = savedExpanded.get(id);
                     } else if (mesh.visible) {
@@ -2411,7 +2451,7 @@
                         if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.scale.setScalar(1.08);
                         mesh.material.transparent = false;
                         mesh.material.opacity = 1;
-                        if (mesh.userData.labelDiv) mesh.userData.labelDiv.style.display = 'block';
+                        if (mesh.userData.labelSprite) mesh.userData.labelSprite.visible = true;
                     }
                 });
                 audio.expand();
@@ -2427,7 +2467,19 @@
                 mesh.userData.description = node.description;
                 mesh.userData.color = node.color;
                 mesh.userData.url = node.url;
-                mesh.userData.labelDiv.innerHTML = node.url ? `<span class="link-icon">${LINK_ICON_SMALL}</span>${escapeHTML(node.label)}` : escapeHTML(node.label);
+                // Update sprite label by recreating texture
+                if (mesh.userData.labelSprite) {
+                    const oldSprite = mesh.userData.labelSprite;
+                    mesh.remove(oldSprite);
+                    oldSprite.material.map?.dispose();
+                    oldSprite.material.dispose();
+                    // Recreate sprite with new label
+                    const newSprite = createLabelSprite(node.label, !!node.url);
+                    newSprite.position.set(0, -mesh.userData.size - 0.5, 0);
+                    newSprite.visible = oldSprite.visible;
+                    mesh.add(newSprite);
+                    mesh.userData.labelSprite = newSprite;
+                }
                 mesh.material.color = new THREE.Color(node.color);
                 if (mesh.userData.outlineMesh) mesh.userData.outlineMesh.material.color = new THREE.Color(node.color).multiplyScalar(0.3);
                 if (selectedNode === mesh) bus.emit('node:selected', { data: mesh.userData });
@@ -2486,7 +2538,7 @@
                 radialMenu.style.top = screenY + 'px';
                 
                 // Update toggle and item positions based on current zoom level
-                if (radialMenuOpen && !radialAnimating) {
+                if (radialMenuOpen && !radialAnimating && radialMenuNode && radialMenuNode.geometry?.parameters?.radius) {
                     const nodeWorldRadius = radialMenuNode.geometry.parameters.radius * radialMenuNode.scale.x;
                     const dist = camera.position.distanceTo(radialMenuNode.position);
                     const fov = camera.fov * (Math.PI / 180);
@@ -2517,49 +2569,21 @@
             // Update controls FIRST so camera position is current
             controls.update();
             
-            // Update labels - position at bottom of node surface (after controls.update for accurate camera position)
-            const visibleNodeMeshes = Array.from(nodes.values()).filter(n => n.visible);
+            // Update sprite labels - scale based on distance for readability
             nodes.forEach(mesh => {
-                if (mesh.visible && mesh.userData.labelDiv) {
-                    // Get node's world radius
-                    const nodeRadius = mesh.geometry.parameters.radius * mesh.scale.x;
-                    
-                    // Calculate label position at bottom of node
-                    const labelWorldPos = mesh.position.clone();
-                    labelWorldPos.y -= nodeRadius * 1.1; // Position just below node surface
-                    
-                    const labelScreenPos = labelWorldPos.clone().project(camera);
-                    const x = (labelScreenPos.x * 0.5 + 0.5) * window.innerWidth;
-                    const y = (labelScreenPos.y * -0.5 + 0.5) * window.innerHeight;
-                    
-                    const distToNode = camera.position.distanceTo(mesh.position);
-                    
-                    // Check if node CENTER is behind another node (simpler check)
-                    const dirToNode = mesh.position.clone().sub(camera.position).normalize();
-                    labelRaycaster.set(camera.position, dirToNode);
-                    const otherNodes = visibleNodeMeshes.filter(n => n !== mesh);
-                    const intersects = labelRaycaster.intersectObjects(otherNodes);
-                    // Label is occluded only if another node fully blocks view to this node's center
-                    const isOccluded = intersects.length > 0 && intersects[0].distance < distToNode - nodeRadius;
-                    
-                    if (isOccluded || labelScreenPos.z > 1) { 
-                        mesh.userData.labelDiv.style.display = 'none'; 
-                    } else {
-                        mesh.userData.labelDiv.style.display = 'block';
-                        const dist = camera.position.distanceTo(mesh.position);
-                        const scale = Math.max(0.7, Math.min(1.0, 18 / dist));
-                        const opacity = Math.max(0.5, Math.min(1, 25 / dist));
-                        
-                        // Calculate z-index based on distance - closer nodes get higher z-index
-                        // Range roughly 50-150 based on typical viewing distances (5-50 units)
-                        const zIndex = Math.round(150 - dist * 2);
-                        mesh.userData.labelDiv.style.zIndex = Math.max(50, zIndex);
-                        
-                        // Use translate3d for GPU acceleration - position from top-left of viewport
-                        mesh.userData.labelDiv.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, 0) scale(${scale})`;
-                        mesh.userData.labelDiv.style.opacity = opacity;
-                    }
-                } else if (mesh.userData.labelDiv) { mesh.userData.labelDiv.style.display = 'none'; }
+                if (mesh.visible && mesh.userData.labelSprite) {
+                    mesh.userData.labelSprite.visible = true;
+                    const dist = camera.position.distanceTo(mesh.position);
+                    // Scale sprite so it stays readable at different zoom levels
+                    const baseScale = 0.6;
+                    const scaleFactor = Math.max(0.4, Math.min(1.2, dist / 20));
+                    const aspect = mesh.userData.labelSprite.scale.x / mesh.userData.labelSprite.scale.y;
+                    mesh.userData.labelSprite.scale.set(baseScale * scaleFactor * aspect, baseScale * scaleFactor, 1);
+                    // Fade opacity with distance
+                    mesh.userData.labelSprite.material.opacity = Math.max(0.5, Math.min(1, 30 / dist));
+                } else if (mesh.userData.labelSprite) { 
+                    mesh.userData.labelSprite.visible = false; 
+                }
             });
             
             renderer.render(scene, camera);
