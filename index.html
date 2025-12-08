@@ -2549,6 +2549,12 @@
                         const dist = camera.position.distanceTo(mesh.position);
                         const scale = Math.max(0.7, Math.min(1.0, 18 / dist));
                         const opacity = Math.max(0.5, Math.min(1, 25 / dist));
+                        
+                        // Calculate z-index based on distance - closer nodes get higher z-index
+                        // Range roughly 50-150 based on typical viewing distances (5-50 units)
+                        const zIndex = Math.round(150 - dist * 2);
+                        mesh.userData.labelDiv.style.zIndex = Math.max(50, zIndex);
+                        
                         // Use translate3d for GPU acceleration - position from top-left of viewport
                         mesh.userData.labelDiv.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, 0) scale(${scale})`;
                         mesh.userData.labelDiv.style.opacity = opacity;
